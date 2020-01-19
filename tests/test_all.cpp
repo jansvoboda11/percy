@@ -89,7 +89,7 @@ TEST_CASE("It fails to parse unbalanced parentheses.", "[example]") {
 
   REQUIRE(result.is_failure());
   REQUIRE(result.begin() == 0);
-  REQUIRE(result.end() == 2);
+  REQUIRE(result.end() == 1); // todo: decide if this should be 1 or 2
 }
 
 TEST_CASE("It fails to parse mismatched parentheses.", "[example]") {
@@ -101,5 +101,5 @@ TEST_CASE("It fails to parse mismatched parentheses.", "[example]") {
 
   REQUIRE(result.is_failure());
   REQUIRE(result.begin() == 0);
-  REQUIRE(result.end() == 2);
+  REQUIRE(result.end() == 1); // todo: decide if this should be 1 or 2
 }

@@ -74,10 +74,9 @@ struct parser<sequence<Rule>> {
   }
 };
 
-template <typename Rule, typename FollowingRule, typename ...FollowingRules>
-struct parser<sequence<Rule, FollowingRule, FollowingRules...>> {
+template <typename Rule, typename ...FollowingRules>
+struct parser<sequence<Rule, FollowingRules...>> {
   using result_type = result<std::tuple<result_value_t<parser_result_t<Rule>>,
-                                        result_value_t<parser_result_t<FollowingRule>>,
                                         result_value_t<parser_result_t<FollowingRules>>...>>;
 
   template <typename Input>
@@ -88,7 +87,7 @@ struct parser<sequence<Rule, FollowingRule, FollowingRules...>> {
       return result_type::failure(result.span());
     }
 
-    auto result_following = parser<sequence<FollowingRule, FollowingRules...>>::parse(input.advanced_to(result.end()));
+    auto result_following = parser<sequence<FollowingRules...>>::parse(input.advanced_to(result.end()));
 
     if (result_following.is_failure()) {
       return result_type::failure({input.position(), result_following.end()});
@@ -138,8 +137,8 @@ struct one_of_parser<ResultType, Index, Input, Rule> {
   }
 };
 
-template <typename ResultType, std::size_t Index, typename Input, typename Rule, typename AlternativeRule, typename ...AlternativeRules>
-struct one_of_parser<ResultType, Index, Input, Rule, AlternativeRule, AlternativeRules...> {
+template <typename ResultType, std::size_t Index, typename Input, typename Rule, typename ...AlternativeRules>
+struct one_of_parser<ResultType, Index, Input, Rule, AlternativeRules...> {
   constexpr static ResultType parse(Input input) {
     using variant_type = result_value_t<ResultType>;
 
@@ -147,7 +146,7 @@ struct one_of_parser<ResultType, Index, Input, Rule, AlternativeRule, Alternativ
       return result;
     }
 
-    return one_of_parser<ResultType, Index + 1, Input, AlternativeRule, AlternativeRules...>::parse(input);
+    return one_of_parser<ResultType, Index + 1, Input, AlternativeRules...>::parse(input);
   }
 };
 
