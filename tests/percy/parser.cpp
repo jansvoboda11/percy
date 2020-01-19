@@ -195,3 +195,23 @@ TEST_CASE("Parser of custom rule succeeds when the inner rule matches.", "[parse
   STATIC_REQUIRE(result.end() == 1);
   STATIC_REQUIRE(result.get() == '{');
 }
+
+TEST_CASE("Parser of custom rule fails when the inner rule fails.", "[parser][custom]") {
+  struct left_curly {
+    using rule = percy::sequence<percy::symbol<'x'>>;
+    static auto action(percy::result<std::tuple<char>> parsed) {
+      FAIL("Called action of a custom rule after failure.");
+      return std::false_type();
+    };
+  };
+
+  using parser = percy::parser<left_curly>;
+
+  auto input = percy::static_input("{");
+
+  auto result = parser::parse(input);
+
+  REQUIRE(result.is_failure());
+  REQUIRE(result.begin() == 0);
+  REQUIRE(result.end() == 1);
+}
