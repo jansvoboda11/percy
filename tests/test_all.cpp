@@ -5,26 +5,33 @@
 #include <percy/parser.hpp>
 #include <percy/static_input.hpp>
 
+#include <utility>
 #include <variant>
 #include <vector>
 
 namespace ast {
 struct paren;
+struct curly;
 
 struct round {
   std::vector<paren> parens;
-  explicit round(std::vector<paren> parens) : parens(parens) {}
+  explicit round(std::vector<paren> parens) : parens(std::move(parens)) {}
+  bool operator==(const round& other) const { return parens == other.parens; }
+  bool operator==(const curly& other) const { return false; }
 };
 
 struct curly {
   std::vector<paren> parens;
-  explicit curly(std::vector<paren> parens) : parens(parens) {}
+  explicit curly(std::vector<paren> parens) : parens(std::move(parens)) {}
+  bool operator==(const curly& other) const { return parens == other.parens; }
+  bool operator==(const round& other) const { return false; }
 };
 
 struct paren {
   std::variant<round, curly> concrete;
   explicit paren(round r) : concrete(r) {}
   explicit paren(curly c) : concrete(c) {}
+  bool operator==(const paren& other) const { return concrete == other.concrete; }
 };
 }
 
@@ -33,7 +40,7 @@ struct paren;
 
 struct round {
   using rule = percy::sequence<percy::symbol<'('>, percy::repeat<paren>, percy::symbol<')'>>;
-  static /*constexpr*/ auto action(percy::result<std::tuple<char, std::vector<ast::paren>, char>> parsed) {
+  static auto action(percy::result<std::tuple<char, std::vector<ast::paren>, char>> parsed) {
     auto parens = std::get<1>(parsed.get());
     return ast::round(parens);
   };
@@ -41,7 +48,7 @@ struct round {
 
 struct curly {
   using rule = percy::sequence<percy::symbol<'{'>, percy::repeat<paren>, percy::symbol<'}'>>;
-  static /*constexpr*/ auto action(percy::result<std::tuple<char, std::vector<ast::paren>, char>> parsed) {
+  static auto action(percy::result<std::tuple<char, std::vector<ast::paren>, char>> parsed) {
     auto parens = std::get<1>(parsed.get());
     return ast::curly(parens);
   };
@@ -49,7 +56,7 @@ struct curly {
 
 struct paren {
   using rule = percy::one_of<round, curly>;
-  static /*constexpr*/ auto action(percy::result<std::variant<ast::round, ast::curly>> parsed) {
+  static auto action(percy::result<std::variant<ast::round, ast::curly>> parsed) {
     auto value = parsed.get();
     return std::holds_alternative<ast::round>(value) ? ast::paren(std::get<ast::round>(value))
                                                      : ast::paren(std::get<ast::curly>(value));
@@ -57,33 +64,42 @@ struct paren {
 };
 }
 
-//namespace percy {
-//template <>
-//struct parser<grammar::paren> {
-//  template <typename Input>
-//  static constexpr auto parse(Input input) {
-//    return double(0.0);
-//  }
-//};
-//}
-
 TEST_CASE("It parses nested parentheses correctly.", "[example]") {
-  auto input = percy::static_input("(({}))");
+  using parser = percy::parser<grammar::paren>;
 
-  using x = percy::parser<grammar::paren>;
+  auto input = percy::static_input("{(()){}}");
 
-//  using y = decltype(percy::parser<grammar::paren>::parse<percy::static_input>);
+  auto result = parser::parse(input);
 
-  using z = decltype(percy::parser<percy::repeat<grammar::paren>>::parse<percy::static_input>);
+  REQUIRE(result.is_success());
+  REQUIRE(result.begin() == 0);
+  REQUIRE(result.end() == 8);
+  REQUIRE(result.get() == ast::paren(ast::curly({
+                              ast::paren(ast::round({
+                                  ast::paren(ast::round({}))})),
+                              ast::paren(ast::curly({}))})));
+}
 
-  static_assert(std::is_same_v<percy::action_return_t<grammar::paren>, ast::paren>);
-//  static_assert(std::is_same_v<, ast::paren>);
+TEST_CASE("It fails to parse unbalanced parentheses.", "[example]") {
+  using parser = percy::parser<grammar::paren>;
 
-//  percy::parser<grammar::paren>::parse(percy::static_input("."));
+  auto input = percy::static_input("({)");
 
-//  std::invoke_result_t<decltype(percy::parser<grammar::paren>::template parse<percy::static_input>), percy::static_input>;
+  auto result = parser::parse(input);
 
-//  percy::parser_result_t<percy::static_input, grammar::paren>;
+  REQUIRE(result.is_failure());
+  REQUIRE(result.begin() == 0);
+  REQUIRE(result.end() == 2);
+}
 
-//  percy::parser<grammar::paren>::parse(input);
+TEST_CASE("It fails to parse mismatched parentheses.", "[example]") {
+  using parser = percy::parser<grammar::paren>;
+
+  auto input = percy::static_input("({))");
+
+  auto result = parser::parse(input);
+
+  REQUIRE(result.is_failure());
+  REQUIRE(result.begin() == 0);
+  REQUIRE(result.end() == 2);
 }

@@ -15,9 +15,6 @@ struct repeat {};
 
 template <typename Rule, typename ...Rules>
 struct one_of {};
-
-template <typename Rule>
-struct unwrap {};
 }
 
 #endif

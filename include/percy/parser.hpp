@@ -12,10 +12,10 @@
 namespace percy {
 template <typename Rule>
 struct parser {
-  template <typename Input>
-  constexpr static auto parse(Input input) {
-    using result_type = result<action_return_t<Rule>>;
+  using result_type = result<action_return_t<Rule>>;
 
+  template <typename Input>
+  constexpr static result_type parse(Input input) {
     auto raw_result = parser<typename Rule::rule>::parse(input);
 
     if (raw_result.is_failure()) {
@@ -28,10 +28,10 @@ struct parser {
 
 template <>
 struct parser<end> {
-  template <typename Input>
-  constexpr static auto parse(Input input) {
-    using result_type = result<std::true_type>;
+  using result_type = result<std::true_type>;
 
+  template <typename Input>
+  constexpr static result_type parse(Input input) {
     if (!input.ended()) {
       return result_type::failure({input.position(), input.position()});
     }
@@ -42,10 +42,10 @@ struct parser<end> {
 
 template <char Symbol>
 struct parser<symbol<Symbol>> {
-  template <typename Input>
-  constexpr static auto parse(Input input) {
-    using result_type = result<char>;
+  using result_type = result<char>;
 
+  template <typename Input>
+  constexpr static result_type parse(Input input) {
     if (input.ended()) {
       return result_type::failure({input.position(), input.position()});
     }
@@ -60,10 +60,10 @@ struct parser<symbol<Symbol>> {
 
 template <typename Rule>
 struct parser<sequence<Rule>> {
-  template <typename Input>
-  constexpr static auto parse(Input input) {
-    using result_type = result<std::tuple<result_value_t<parser_result_t<Input, Rule>>>>;
+  using result_type = result<std::tuple<result_value_t<parser_result_t<Rule>>>>;
 
+  template <typename Input>
+  constexpr static result_type parse(Input input) {
     auto result = parser<Rule>::parse(input);
 
     if (result.is_failure()) {
@@ -76,11 +76,12 @@ struct parser<sequence<Rule>> {
 
 template <typename Rule, typename FollowingRule, typename ...FollowingRules>
 struct parser<sequence<Rule, FollowingRule, FollowingRules...>> {
-  template <typename Input>
-  constexpr static auto parse(Input input) {
-    using result_type = result_followed_by_t<parser_result_t<Input, Rule>,
-                                             parser_result_t<Input, sequence<FollowingRule, FollowingRules...>>>;
+  using result_type = result<std::tuple<result_value_t<parser_result_t<Rule>>,
+                                        result_value_t<parser_result_t<FollowingRule>>,
+                                        result_value_t<parser_result_t<FollowingRules>>...>>;
 
+  template <typename Input>
+  constexpr static result_type parse(Input input) {
     auto result = parser<Rule>::parse(input);
 
     if (result.is_failure()) {
@@ -99,9 +100,10 @@ struct parser<sequence<Rule, FollowingRule, FollowingRules...>> {
 
 template <typename Rule>
 struct parser<repeat<Rule>> {
+  using result_type = result<std::vector<result_value_t<parser_result_t<Rule>>>>;
+
   template <typename Input>
-  constexpr static auto parse(Input input) {
-    using result_type = result<std::vector<result_value_t<parser_result_t<Input, Rule>>>>;
+  constexpr static result_type parse(Input input) {
     using vector_type = result_value_t<result_type>;
 
     vector_type values;
@@ -122,7 +124,7 @@ struct one_of_parser {};
 
 template <typename ResultType, std::size_t Index, typename Input, typename Rule>
 struct one_of_parser<ResultType, Index, Input, Rule> {
-  constexpr static auto parse(Input input) {
+  constexpr static ResultType parse(Input input) {
     using variant_type = result_value_t<ResultType>;
 
     auto result = parser<Rule>::parse(input);
@@ -138,7 +140,7 @@ struct one_of_parser<ResultType, Index, Input, Rule> {
 
 template <typename ResultType, std::size_t Index, typename Input, typename Rule, typename AlternativeRule, typename ...AlternativeRules>
 struct one_of_parser<ResultType, Index, Input, Rule, AlternativeRule, AlternativeRules...> {
-  constexpr static auto parse(Input input) {
+  constexpr static ResultType parse(Input input) {
     using variant_type = result_value_t<ResultType>;
 
     if (auto result = one_of_parser<ResultType, Index, Input, Rule>::parse(input)) {
@@ -151,20 +153,11 @@ struct one_of_parser<ResultType, Index, Input, Rule, AlternativeRule, Alternativ
 
 template <typename ...Rules>
 struct parser<one_of<Rules...>> {
-  template <typename Input>
-  constexpr static auto parse(Input input) {
-    using result_type = result<std::variant<result_value_t<parser_result_t<Input, Rules>>...>>;
+  using result_type = result<std::variant<result_value_t<parser_result_t<Rules>>...>>;
 
+  template <typename Input>
+  constexpr static result_type parse(Input input) {
     return one_of_parser<result_type, 0, Input, Rules...>::parse(input);
-  }
-};
-
-template <typename Rule>
-struct parser<unwrap<Rule>> {
-  template <typename Input>
-  constexpr static auto parse(Input input) {
-    auto result = parser<Rule>::parse(input);
-    return result.get();
   }
 };
 }
