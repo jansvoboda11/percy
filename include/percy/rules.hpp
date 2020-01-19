@@ -7,7 +7,7 @@ struct end {};
 template <char Symbol>
 struct symbol {};
 
-template <typename ...Rules>
+template <typename Rule, typename ...FollowingRules>
 struct sequence {};
 
 template <typename Rule, typename ...AlternativeRules>

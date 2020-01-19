@@ -5,10 +5,6 @@
 #include <percy/parser.hpp>
 #include <percy/static_input.hpp>
 
-#include <utility>
-#include <variant>
-#include <vector>
-
 namespace ast {
 struct paren;
 struct curly;
@@ -89,8 +85,7 @@ TEST_CASE("It fails to parse unbalanced parentheses.", "[example]") {
 
   REQUIRE(result.is_failure());
   REQUIRE(result.begin() == 0);
-  // todo: decide what this should be
-//  REQUIRE(result.end() == 0);
+  REQUIRE(result.end() == 2);
 }
 
 TEST_CASE("It fails to parse mismatched parentheses.", "[example]") {
@@ -102,6 +97,5 @@ TEST_CASE("It fails to parse mismatched parentheses.", "[example]") {
 
   REQUIRE(result.is_failure());
   REQUIRE(result.begin() == 0);
-  // todo: decide what this should be
-//  REQUIRE(result.end() == 0);
+  REQUIRE(result.end() == 2);
 }
