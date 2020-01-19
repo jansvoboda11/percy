@@ -78,11 +78,13 @@ struct parser<sequence<Rule>> {
   }
 };
 
-template <typename Rule, typename FollowingRule, typename ...FollowingRules>
+template <typename Rule, typename FollowingRule, typename... FollowingRules>
 struct parser<sequence<Rule, FollowingRule, FollowingRules...>> {
+  // clang-format off
   using result_type = result<std::tuple<result_value_t<parser_result_t<Rule>>,
                                         result_value_t<parser_result_t<FollowingRule>>,
                                         result_value_t<parser_result_t<FollowingRules>>...>>;
+  // clang-format on
 
   template <typename Input>
   constexpr static result_type parse(Input input) {
@@ -122,11 +124,13 @@ struct parser<one_of<Rule>> {
   }
 };
 
-template <typename Rule, typename AlternativeRule, typename ...AlternativeRules>
+template <typename Rule, typename AlternativeRule, typename... AlternativeRules>
 struct parser<one_of<Rule, AlternativeRule, AlternativeRules...>> {
+  // clang-format off
   using result_type = result<std::variant<result_value_t<parser_result_t<Rule>>,
                                           result_value_t<parser_result_t<AlternativeRule>>,
                                           result_value_t<parser_result_t<AlternativeRules>>...>>;
+  // clang-format on
 
   template <typename Input>
   constexpr static result_type parse(Input input) {
@@ -169,6 +173,6 @@ struct parser<repeat<Rule>> {
     return result_type::success(values, {input.position(), input_current.position()});
   }
 };
-}
+} // namespace percy
 
 #endif

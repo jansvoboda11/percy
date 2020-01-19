@@ -18,7 +18,7 @@ using parser_result_t = typename parser<Rule>::result_type;
 template <typename F>
 struct function_return;
 
-template <typename R, typename ...As>
+template <typename R, typename... As>
 struct function_return<R(As...)> {
   using type = R;
 };
@@ -30,6 +30,6 @@ struct action_return {
 
 template <typename Rule>
 using action_return_t = typename action_return<Rule>::type;
-}
+} // namespace percy
 
 #endif

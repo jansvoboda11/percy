@@ -5,6 +5,7 @@
 #include <percy/parser.hpp>
 #include <percy/static_input.hpp>
 
+// clang-format off
 namespace ast {
 struct paren;
 struct curly;
@@ -29,7 +30,8 @@ struct paren {
   explicit paren(curly c) : concrete(c) {}
   bool operator==(const paren& other) const { return concrete == other.concrete; }
 };
-}
+} // namespace ast
+// clang-format on
 
 namespace grammar {
 struct paren;
@@ -58,8 +60,9 @@ struct paren {
                                                      : ast::paren(std::get<ast::curly>(value));
   };
 };
-}
+} // namespace grammar
 
+// clang-format off
 TEST_CASE("It parses nested parentheses correctly.", "[example]") {
   using parser = percy::parser<grammar::paren>;
 
@@ -75,6 +78,7 @@ TEST_CASE("It parses nested parentheses correctly.", "[example]") {
                                   ast::paren(ast::round({}))})),
                               ast::paren(ast::curly({}))})));
 }
+// clang-format on
 
 TEST_CASE("It fails to parse unbalanced parentheses.", "[example]") {
   using parser = percy::parser<grammar::paren>;

@@ -107,11 +107,11 @@ TEST_CASE("Parser `repeat` succeeds even when rule matches zero times.", "[parse
 
   constexpr auto input = percy::static_input("abc");
 
-  /*constexpr*/ auto result = parser::parse(input);
+  auto result = parser::parse(input);
 
-  /*STATIC_*/REQUIRE(result.is_success());
-  /*STATIC_*/REQUIRE(result.begin() == 0);
-  /*STATIC_*/REQUIRE(result.end() == 0);
+  REQUIRE(result.is_success());
+  REQUIRE(result.begin() == 0);
+  REQUIRE(result.end() == 0);
 }
 
 TEST_CASE("Parser `repeat` succeeds even when rule matches multiple times.", "[parser][repeat]") {
@@ -119,12 +119,12 @@ TEST_CASE("Parser `repeat` succeeds even when rule matches multiple times.", "[p
 
   constexpr auto input = percy::static_input("aac");
 
-  /*constexpr*/ auto result = parser::parse(input);
+  auto result = parser::parse(input);
 
-  /*STATIC_*/REQUIRE(result.is_success());
-  /*STATIC_*/REQUIRE(result.begin() == 0);
-  /*STATIC_*/REQUIRE(result.end() == 2);
-  /*STATIC_*/REQUIRE(result.get() == std::vector<char>{'a', 'a'});
+  REQUIRE(result.is_success());
+  REQUIRE(result.begin() == 0);
+  REQUIRE(result.end() == 2);
+  REQUIRE(result.get() == std::vector<char>{'a', 'a'});
 }
 
 TEST_CASE("Parser `repeat` stops at the input end.", "[parser][repeat]") {
@@ -132,12 +132,12 @@ TEST_CASE("Parser `repeat` stops at the input end.", "[parser][repeat]") {
 
   constexpr auto input = percy::static_input("aaa");
 
-  /*constexpr*/ auto result = parser::parse(input);
+  auto result = parser::parse(input);
 
-  /*STATIC_*/REQUIRE(result.is_success());
-  /*STATIC_*/REQUIRE(result.begin() == 0);
-  /*STATIC_*/REQUIRE(result.end() == 3);
-  /*STATIC_*/REQUIRE(result.get() == std::vector<char>{'a', 'a', 'a'});
+  REQUIRE(result.is_success());
+  REQUIRE(result.begin() == 0);
+  REQUIRE(result.end() == 3);
+  REQUIRE(result.get() == std::vector<char>{'a', 'a', 'a'});
 }
 
 TEST_CASE("Parser `one_of` succeeds when first rule matches.", "[parser][one_of]") {

@@ -9,15 +9,11 @@ class static_input {
   std::size_t cursor_;
 
 public:
-  constexpr explicit static_input(const char *content, std::size_t position = 0)
-      : content_(content), cursor_(position) {
-    //
-  }
+  constexpr explicit static_input(const char* content, std::size_t position = 0)
+      : content_(content), cursor_(position) {}
 
   constexpr explicit static_input(std::string_view content, std::size_t position = 0)
-      : content_(content), cursor_(position) {
-    //
-  }
+      : content_(content), cursor_(position) {}
 
   constexpr char peek() const {
     return content_[cursor_];
@@ -44,6 +40,6 @@ public:
     return advanced_to(result.end());
   }
 };
-}
+} // namespace percy
 
 #endif
