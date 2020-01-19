@@ -173,7 +173,7 @@ TEST_CASE("Parser `one_of` fails when no rule matches.", "[parser][one_of]") {
 
   STATIC_REQUIRE(result.is_failure());
   STATIC_REQUIRE(result.begin() == 0);
-  STATIC_REQUIRE(result.end() == 1);
+  STATIC_REQUIRE(result.end() == 0);
 }
 
 TEST_CASE("Parser of custom rule succeeds when the inner rule matches.", "[parser][custom]") {

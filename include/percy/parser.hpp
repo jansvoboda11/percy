@@ -4,6 +4,7 @@
 #include <percy/result.hpp>
 #include <percy/rules.hpp>
 #include <percy/type_traits.hpp>
+#include <percy/utils.hpp>
 
 #include <tuple>
 #include <variant>
@@ -58,19 +59,15 @@ struct parser<symbol<Symbol>> {
   }
 };
 
-template <typename Rule>
-struct parser<sequence<Rule>> {
-  using result_type = result<std::tuple<result_value_t<parser_result_t<Rule>>>>;
+template <>
+struct parser<sequence<>> {
+  using result_type = result<std::tuple<>>;
 
   template <typename Input>
   constexpr static result_type parse(Input input) {
-    auto result = parser<Rule>::parse(input);
+    using tuple_type = result_value_t<result_type>;
 
-    if (result.is_failure()) {
-      return result_type::failure(result.span());
-    }
-
-    return result_type::success(result.get(), result.span());
+    return result_type::success(tuple_type(), {input.position(), input.position()});
   }
 };
 
@@ -98,6 +95,48 @@ struct parser<sequence<Rule, FollowingRules...>> {
 };
 
 template <typename Rule>
+struct parser<one_of<Rule>> {
+  using result_type = result<std::variant<result_value_t<parser_result_t<Rule>>>>;
+
+  template <typename Input>
+  constexpr static result_type parse(Input input) {
+    using variant_type = result_value_t<result_type>;
+
+    auto result = parser<Rule>::parse(input);
+
+    if (result.is_failure()) {
+      return result_type::failure(result.span());
+    }
+
+    auto value = variant_type(result.get());
+    return result_type::success(value, result.span());
+  }
+};
+
+template <typename Rule, typename AlternativeRule, typename ...AlternativeRules>
+struct parser<one_of<Rule, AlternativeRule, AlternativeRules...>> {
+  using result_type = result<std::variant<result_value_t<parser_result_t<Rule>>,
+                                          result_value_t<parser_result_t<AlternativeRule>>,
+                                          result_value_t<parser_result_t<AlternativeRules>>...>>;
+
+  template <typename Input>
+  constexpr static result_type parse(Input input) {
+    if (auto result = parser<one_of<Rule>>::parse(input)) {
+      auto value = append_types<result_value_t<parser_result_t<AlternativeRule>>,
+                                result_value_t<parser_result_t<AlternativeRules>>...>(result.get());
+      return result_type::success(value, result.span());
+    }
+
+    if (auto alternative_result = parser<one_of<AlternativeRule, AlternativeRules...>>::parse(input)) {
+      auto value = prepend_types<result_value_t<parser_result_t<Rule>>>(alternative_result.get());
+      return result_type::success(value, alternative_result.span());
+    }
+
+    return result_type::failure({input.position(), input.position()});
+  }
+};
+
+template <typename Rule>
 struct parser<repeat<Rule>> {
   using result_type = result<std::vector<result_value_t<parser_result_t<Rule>>>>;
 
@@ -115,48 +154,6 @@ struct parser<repeat<Rule>> {
     }
 
     return result_type::success(values, {input.position(), input_current.position()});
-  }
-};
-
-template <typename ResultType, std::size_t Index, typename Input, typename ...Rules>
-struct one_of_parser {};
-
-template <typename ResultType, std::size_t Index, typename Input, typename Rule>
-struct one_of_parser<ResultType, Index, Input, Rule> {
-  constexpr static ResultType parse(Input input) {
-    using variant_type = result_value_t<ResultType>;
-
-    auto result = parser<Rule>::parse(input);
-
-    if (result.is_failure()) {
-      return ResultType::failure(result.span());
-    }
-
-    auto value = variant_type(std::in_place_index<Index>, result.get());
-    return ResultType::success(value, result.span());
-  }
-};
-
-template <typename ResultType, std::size_t Index, typename Input, typename Rule, typename ...AlternativeRules>
-struct one_of_parser<ResultType, Index, Input, Rule, AlternativeRules...> {
-  constexpr static ResultType parse(Input input) {
-    using variant_type = result_value_t<ResultType>;
-
-    if (auto result = one_of_parser<ResultType, Index, Input, Rule>::parse(input)) {
-      return result;
-    }
-
-    return one_of_parser<ResultType, Index + 1, Input, AlternativeRules...>::parse(input);
-  }
-};
-
-template <typename ...Rules>
-struct parser<one_of<Rules...>> {
-  using result_type = result<std::variant<result_value_t<parser_result_t<Rules>>...>>;
-
-  template <typename Input>
-  constexpr static result_type parse(Input input) {
-    return one_of_parser<result_type, 0, Input, Rules...>::parse(input);
   }
 };
 }
