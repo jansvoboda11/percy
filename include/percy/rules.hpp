@@ -14,10 +14,10 @@ template <typename Rule, typename... FollowingRules>
 struct sequence {};
 
 template <typename Rule, typename... AlternativeRules>
-struct one_of {};
+struct alternatives {};
 
 template <typename Rule>
-struct repeat {};
+struct many {};
 } // namespace percy
 
 #endif

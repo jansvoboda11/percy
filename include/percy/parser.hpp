@@ -136,7 +136,7 @@ struct parser<sequence<Rule, FollowingRule, FollowingRules...>> {
 };
 
 template <typename Rule>
-struct parser<one_of<Rule>> {
+struct parser<alternatives<Rule>> {
   using result_type = result<std::variant<result_value_t<parser_result_t<Rule>>>>;
 
   template <typename Input>
@@ -155,7 +155,7 @@ struct parser<one_of<Rule>> {
 };
 
 template <typename Rule, typename AlternativeRule, typename... AlternativeRules>
-struct parser<one_of<Rule, AlternativeRule, AlternativeRules...>> {
+struct parser<alternatives<Rule, AlternativeRule, AlternativeRules...>> {
   // clang-format off
   using result_type = result<std::variant<result_value_t<parser_result_t<Rule>>,
                                           result_value_t<parser_result_t<AlternativeRule>>,
@@ -164,7 +164,7 @@ struct parser<one_of<Rule, AlternativeRule, AlternativeRules...>> {
 
   template <typename Input>
   constexpr static result_type parse(Input input) {
-    auto result = parser<one_of<Rule>>::parse(input);
+    auto result = parser<alternatives<Rule>>::parse(input);
 
     if (result.is_success()) {
       auto value = append_types<result_value_t<parser_result_t<AlternativeRule>>,
@@ -172,7 +172,7 @@ struct parser<one_of<Rule, AlternativeRule, AlternativeRules...>> {
       return result_type::success(value, result.span());
     }
 
-    auto alternative_result = parser<one_of<AlternativeRule, AlternativeRules...>>::parse(input);
+    auto alternative_result = parser<alternatives<AlternativeRule, AlternativeRules...>>::parse(input);
 
     if (alternative_result) {
       auto value = prepend_types<result_value_t<parser_result_t<Rule>>>(alternative_result.get());
@@ -184,7 +184,7 @@ struct parser<one_of<Rule, AlternativeRule, AlternativeRules...>> {
 };
 
 template <typename Rule>
-struct parser<repeat<Rule>> {
+struct parser<many<Rule>> {
   using result_type = result<std::vector<result_value_t<parser_result_t<Rule>>>>;
 
   template <typename Input>

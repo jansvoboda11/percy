@@ -37,7 +37,7 @@ namespace grammar {
 struct paren;
 
 struct round {
-  using rule = percy::sequence<percy::symbol<'('>, percy::repeat<paren>, percy::symbol<')'>>;
+  using rule = percy::sequence<percy::symbol<'('>, percy::many<paren>, percy::symbol<')'>>;
   static auto action(percy::result<std::tuple<char, std::vector<ast::paren>, char>> parsed) {
     auto parens = std::get<1>(parsed.get());
     return ast::round(parens);
@@ -45,7 +45,7 @@ struct round {
 };
 
 struct curly {
-  using rule = percy::sequence<percy::symbol<'{'>, percy::repeat<paren>, percy::symbol<'}'>>;
+  using rule = percy::sequence<percy::symbol<'{'>, percy::many<paren>, percy::symbol<'}'>>;
   static auto action(percy::result<std::tuple<char, std::vector<ast::paren>, char>> parsed) {
     auto parens = std::get<1>(parsed.get());
     return ast::curly(parens);
@@ -53,7 +53,7 @@ struct curly {
 };
 
 struct paren {
-  using rule = percy::one_of<round, curly>;
+  using rule = percy::alternatives<round, curly>;
   static auto action(percy::result<std::variant<ast::round, ast::curly>> parsed) {
     auto value = parsed.get();
     return std::holds_alternative<ast::round>(value) ? ast::paren(std::get<ast::round>(value))
