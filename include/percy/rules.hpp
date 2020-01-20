@@ -14,7 +14,7 @@ template <typename Rule, typename... FollowingRules>
 struct sequence {};
 
 template <typename Rule, typename... AlternativeRules>
-struct alternatives {};
+struct either {};
 
 template <typename Rule>
 struct many {};

@@ -121,8 +121,8 @@ TEST_CASE("Parser `sequence` fails when following rule does not match.", "[parse
   STATIC_REQUIRE(result.end() == 2);
 }
 
-TEST_CASE("Parser `alternatives` succeeds when first rule matches.", "[parser][alternatives]") {
-  using parser = percy::parser<percy::alternatives<percy::symbol<'a'>, percy::symbol<'b'>>>;
+TEST_CASE("Parser `either` succeeds when first rule matches.", "[parser][either]") {
+  using parser = percy::parser<percy::either<percy::symbol<'a'>, percy::symbol<'b'>>>;
   constexpr auto input = percy::static_input("abc");
   constexpr auto result = parser::parse(input);
 
@@ -131,8 +131,8 @@ TEST_CASE("Parser `alternatives` succeeds when first rule matches.", "[parser][a
   STATIC_REQUIRE(result.end() == 1);
 }
 
-TEST_CASE("Parser `alternatives` succeeds when alternative rule matches.", "[parser][alternatives]") {
-  using parser = percy::parser<percy::alternatives<percy::symbol<'x'>, percy::symbol<'a'>>>;
+TEST_CASE("Parser `either` succeeds when alternative rule matches.", "[parser][either]") {
+  using parser = percy::parser<percy::either<percy::symbol<'x'>, percy::symbol<'a'>>>;
   constexpr auto input = percy::static_input("abc");
   constexpr auto result = parser::parse(input);
 
@@ -141,8 +141,8 @@ TEST_CASE("Parser `alternatives` succeeds when alternative rule matches.", "[par
   STATIC_REQUIRE(result.end() == 1);
 }
 
-TEST_CASE("Parser `alternatives` fails when no rule matches.", "[parser][alternatives]") {
-  using parser = percy::parser<percy::alternatives<percy::symbol<'x'>, percy::symbol<'x'>>>;
+TEST_CASE("Parser `either` fails when no rule matches.", "[parser][either]") {
+  using parser = percy::parser<percy::either<percy::symbol<'x'>, percy::symbol<'x'>>>;
   constexpr auto input = percy::static_input("abc");
   constexpr auto result = parser::parse(input);
 

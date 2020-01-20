@@ -53,7 +53,7 @@ struct curly {
 };
 
 struct paren {
-  using rule = percy::alternatives<round, curly>;
+  using rule = percy::either<round, curly>;
   static auto action(percy::result<std::variant<ast::round, ast::curly>> parsed) {
     auto value = parsed.get();
     return std::holds_alternative<ast::round>(value) ? ast::paren(std::get<ast::round>(value))
