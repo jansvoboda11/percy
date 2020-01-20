@@ -59,6 +59,36 @@ struct parser<symbol<Symbol>> {
   }
 };
 
+template <typename StringProvider>
+struct parser<word<StringProvider>> {
+  using result_type = result<std::string_view>;
+
+  template <typename Input>
+  constexpr static result_type parse(Input input) {
+    auto string = StringProvider::string;
+
+    if (starts_with(input, string)) {
+      return result_type::success(string, {input.position(), input.position() + string.length()});
+    }
+
+    return result_type::failure({input.position(), input.position() + string.length()});
+  }
+
+private:
+  template <typename Input>
+  constexpr static bool starts_with(Input input, std::string_view string) {
+    for (auto character : string) {
+      if (input.ended() || input.peek() != character) {
+        return false;
+      }
+
+      input = input.advanced_by(1);
+    }
+
+    return true;
+  }
+};
+
 template <typename Rule>
 struct parser<sequence<Rule>> {
   using result_type = result<std::tuple<result_value_t<parser_result_t<Rule>>>>;

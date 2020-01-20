@@ -7,6 +7,9 @@ struct end {};
 template <char Symbol>
 struct symbol {};
 
+template <typename StringProvider>
+struct word {};
+
 template <typename Rule, typename... FollowingRules>
 struct sequence {};
 
