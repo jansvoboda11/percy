@@ -187,7 +187,7 @@ struct left_curly {
   using rule = percy::sequence<percy::symbol<'{'>>;
   static constexpr auto action(percy::result<std::tuple<char>> parsed) {
     return std::get<0>(parsed.get());
-  };
+  }
 };
 
 TEST_CASE("Parser of custom rule succeeds when the inner rule matches.", "[parser][custom]") {
@@ -206,7 +206,7 @@ struct right_curly {
   static auto action(percy::result<std::tuple<char>> parsed) {
     FAIL("Called action of a custom rule after failure.");
     return std::false_type();
-  };
+  }
 };
 
 TEST_CASE("Parser of custom rule fails when the inner rule fails.", "[parser][custom]") {

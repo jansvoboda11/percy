@@ -8,20 +8,17 @@
 // clang-format off
 namespace ast {
 struct paren;
-struct curly;
 
 struct round {
   std::vector<paren> parens;
   explicit round(std::vector<paren> parens) : parens(std::move(parens)) {}
   bool operator==(const round& other) const { return parens == other.parens; }
-  bool operator==(const curly& other) const { return false; }
 };
 
 struct curly {
   std::vector<paren> parens;
   explicit curly(std::vector<paren> parens) : parens(std::move(parens)) {}
   bool operator==(const curly& other) const { return parens == other.parens; }
-  bool operator==(const round& other) const { return false; }
 };
 
 struct paren {
@@ -41,7 +38,7 @@ struct round {
   static auto action(percy::result<std::tuple<char, std::vector<ast::paren>, char>> parsed) {
     auto parens = std::get<1>(parsed.get());
     return ast::round(parens);
-  };
+  }
 };
 
 struct curly {
@@ -49,25 +46,21 @@ struct curly {
   static auto action(percy::result<std::tuple<char, std::vector<ast::paren>, char>> parsed) {
     auto parens = std::get<1>(parsed.get());
     return ast::curly(parens);
-  };
+  }
 };
 
 struct paren {
   using rule = percy::either<round, curly>;
   static auto action(percy::result<std::variant<ast::round, ast::curly>> parsed) {
-    auto value = parsed.get();
-    return std::holds_alternative<ast::round>(value) ? ast::paren(std::get<ast::round>(value))
-                                                     : ast::paren(std::get<ast::curly>(value));
-  };
+    return std::visit([](auto paren) { return ast::paren(paren); }, parsed.get());
+  }
 };
 } // namespace grammar
 
 // clang-format off
 TEST_CASE("It parses nested parentheses correctly.", "[example]") {
   using parser = percy::parser<grammar::paren>;
-
   auto input = percy::static_input("{(()){}}");
-
   auto result = parser::parse(input);
 
   REQUIRE(result.is_success());
@@ -82,9 +75,7 @@ TEST_CASE("It parses nested parentheses correctly.", "[example]") {
 
 TEST_CASE("It fails to parse unbalanced parentheses.", "[example]") {
   using parser = percy::parser<grammar::paren>;
-
   auto input = percy::static_input("({)");
-
   auto result = parser::parse(input);
 
   REQUIRE(result.is_failure());
@@ -94,9 +85,7 @@ TEST_CASE("It fails to parse unbalanced parentheses.", "[example]") {
 
 TEST_CASE("It fails to parse mismatched parentheses.", "[example]") {
   using parser = percy::parser<grammar::paren>;
-
   auto input = percy::static_input("({))");
-
   auto result = parser::parse(input);
 
   REQUIRE(result.is_failure());
