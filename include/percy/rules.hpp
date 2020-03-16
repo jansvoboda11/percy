@@ -19,6 +19,9 @@ struct sequence {};
 template <typename Rule, typename... AlternativeRules>
 struct either {};
 
+template <typename Rule, typename... AlternativeRules>
+struct one_of {};
+
 template <typename Rule>
 struct many {};
 } // namespace percy

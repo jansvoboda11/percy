@@ -211,6 +211,42 @@ TEST_CASE("Parser `either` fails when no rule matches.", "[parser][either]") {
   STATIC_REQUIRE(result.end() == 1);
 }
 
+struct abc {
+  constexpr static std::string_view string = "abc";
+};
+
+TEST_CASE("Parser `one_of` succeeds when first rule matches.", "[parser][one_of]") {
+  using parser = percy::parser<percy::one_of<percy::word<abc>, percy::symbol<'x'>>>;
+  constexpr auto input = percy::static_input("abc");
+  constexpr auto result = parser::parse(input);
+
+  STATIC_REQUIRE(result.is_success());
+  STATIC_REQUIRE(result.begin() == 0);
+  STATIC_REQUIRE(result.end() == 3);
+  STATIC_REQUIRE(result.get() == std::variant<std::string_view, char>("abc"));
+}
+
+TEST_CASE("Parser `one_of` succeeds when alternative rule matches.", "[parser][one_of]") {
+  using parser = percy::parser<percy::one_of<percy::word<abc>, percy::symbol<'x'>>>;
+  constexpr auto input = percy::static_input("xyz");
+  constexpr auto result = parser::parse(input);
+
+  STATIC_REQUIRE(result.is_success());
+  STATIC_REQUIRE(result.begin() == 0);
+  STATIC_REQUIRE(result.end() == 1);
+  STATIC_REQUIRE(result.get() == std::variant<std::string_view, char>('x'));
+}
+
+TEST_CASE("Parser `one_of` fails when no rule matches.", "[parser][one_of]") {
+  using parser = percy::parser<percy::one_of<percy::symbol<'x'>, percy::word<abc>>>;
+  constexpr auto input = percy::static_input("ijk");
+  constexpr auto result = parser::parse(input);
+
+  STATIC_REQUIRE(result.is_failure());
+  STATIC_REQUIRE(result.begin() == 0);
+  STATIC_REQUIRE(result.end() == 3);
+}
+
 TEST_CASE("Parser `many` succeeds even when rule matches zero times.", "[parser][many]") {
   using parser = percy::parser<percy::many<percy::symbol<'x'>>>;
   auto input = percy::static_input("abc");

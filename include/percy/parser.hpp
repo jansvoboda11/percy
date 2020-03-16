@@ -167,6 +167,7 @@ struct parser<either<Rule>> {
 template <typename Rule, typename AlternativeRule, typename... AlternativeRules>
 struct parser<either<Rule, AlternativeRule, AlternativeRules...>> {
   // todo: move this to the rule itself?
+  // todo: fix the error in example with three alternatives
   // clang-format off
   static_assert(std::is_same_v<result_value_t<parser_result_t<Rule>>,
                                result_value_t<parser_result_t<AlternativeRule>>,
@@ -187,6 +188,58 @@ struct parser<either<Rule, AlternativeRule, AlternativeRules...>> {
 
     if (alternative_result.is_success()) {
       return alternative_result;
+    }
+
+    return result_type::failure({input.position(), std::max(result.end(), alternative_result.end())});
+  }
+};
+
+template <typename Rule>
+struct parser<one_of<Rule>> {
+  using result_type = result<std::variant<result_value_t<parser_result_t<Rule>>>>;
+
+  template <typename Input>
+  constexpr static result_type parse(Input input) {
+    using variant_type = result_value_t<result_type>;
+
+    auto result = parser<Rule>::parse(input);
+
+    if (result.is_failure()) {
+      return result_type::failure(result.span());
+    }
+
+    return result_type::success(variant_type(result.get()), result.span());
+  }
+};
+
+template <typename Rule, typename AlternativeRule, typename... AlternativeRules>
+struct parser<one_of<Rule, AlternativeRule, AlternativeRules...>> {
+  // todo: assert the result_value_t's of all rules are distinct
+
+  // clang-format off
+  using result_type = result<std::variant<result_value_t<parser_result_t<Rule>>,
+                                          result_value_t<parser_result_t<AlternativeRule>>,
+                                          result_value_t<parser_result_t<AlternativeRules>>...>>;
+  // clang-format on
+
+  template <typename Input>
+  constexpr static result_type parse(Input input) {
+    using variant_type = result_value_t<result_type>;
+
+    auto cast_variant = [](auto small_variant) {
+      return std::visit([](auto item) { return variant_type(item); }, small_variant);
+    };
+
+    auto result = parser<one_of<Rule>>::parse(input);
+
+    if (result.is_success()) {
+      return result_type::success(cast_variant(result.get()), result.span());
+    }
+
+    auto alternative_result = parser<one_of<AlternativeRule, AlternativeRules...>>::parse(input);
+
+    if (alternative_result.is_success()) {
+      return result_type::success(cast_variant(alternative_result.get()), alternative_result.span());
     }
 
     return result_type::failure({input.position(), std::max(result.end(), alternative_result.end())});

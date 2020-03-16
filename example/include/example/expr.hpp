@@ -78,7 +78,7 @@ struct bin_op {
 };
 
 struct expr {
-  using rule = percy::either<int_lit, var_ref, bin_op>;
+  using rule = percy::one_of<int_lit, var_ref, bin_op>;
 
   constexpr static auto action(percy::result<std::variant<ast::int_lit, ast::var_ref, ast::bin_op>> parsed) {
     return ast::expr(parsed.get());
