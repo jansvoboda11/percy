@@ -7,6 +7,5 @@ int main() {
   using parser = percy::parser<example::grammar::expr>;
   constexpr auto input = percy::static_input(INPUT_CODE);
   constexpr auto result = parser::parse(input);
-
-  return 42;
+  return result.is_success() ? 0 : 1;
 }

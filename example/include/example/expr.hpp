@@ -36,7 +36,9 @@ struct bin_op {
 };
 
 struct expr {
-  constexpr explicit expr(std::variant<int_lit, var_ref, bin_op> value) : value(value) {}
+  constexpr explicit expr(int_lit value) : value(value) {}
+  constexpr explicit expr(var_ref value) : value(value) {}
+  constexpr explicit expr(bin_op value) : value(value) {}
   std::variant<int_lit, var_ref, bin_op> value;
 };
 } // namespace ast
@@ -72,8 +74,8 @@ struct bin_op {
   using rule = percy::sequence<expr, op_code, expr>;
 
   constexpr static auto action(percy::result<std::tuple<ast::expr, ast::op_code, ast::expr>> parsed) {
-    auto result = parsed.get();
-    return ast::bin_op(std::get<0>(result), std::get<1>(result), std::get<2>(result));
+    auto [lhs, op, rhs] = parsed.get();
+    return ast::bin_op(lhs, op, rhs);
   }
 };
 
@@ -81,7 +83,7 @@ struct expr {
   using rule = percy::one_of<int_lit, var_ref, bin_op>;
 
   constexpr static auto action(percy::result<std::variant<ast::int_lit, ast::var_ref, ast::bin_op>> parsed) {
-    return ast::expr(parsed.get());
+    return std::visit([](auto item) { return ast::expr(item); }, parsed.get());
   }
 };
 } // namespace grammar
