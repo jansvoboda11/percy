@@ -1,9 +1,7 @@
 #ifndef PERCY_TYPE_TRAITS
 #define PERCY_TYPE_TRAITS
 
-#include <tuple>
 #include <type_traits>
-#include <vector>
 
 namespace percy {
 template <typename Rule>
@@ -30,6 +28,14 @@ struct action_return {
 
 template <typename Rule>
 using action_return_t = typename action_return<Rule>::type;
+
+template <typename Type, typename... Types>
+struct are_same {
+  constexpr static bool value = std::conjunction_v<std::is_same<Type, Types>...>;
+};
+
+template <typename Type, typename... Types>
+inline constexpr bool are_same_v = are_same<Type, Types...>::value;
 } // namespace percy
 
 #endif

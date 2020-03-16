@@ -1,10 +1,9 @@
 #ifndef PERCY_PARSER
 #define PERCY_PARSER
 
-#include <percy/result.hpp>
-#include <percy/rules.hpp>
-#include <percy/type_traits.hpp>
-#include <percy/utils.hpp>
+#include "result.hpp"
+#include "rules.hpp"
+#include "type_traits.hpp"
 
 #include <string_view>
 #include <tuple>
@@ -167,11 +166,10 @@ struct parser<either<Rule>> {
 template <typename Rule, typename AlternativeRule, typename... AlternativeRules>
 struct parser<either<Rule, AlternativeRule, AlternativeRules...>> {
   // todo: move this to the rule itself?
-  // todo: fix the error in example with three alternatives
   // clang-format off
-  static_assert(std::is_same_v<result_value_t<parser_result_t<Rule>>,
-                               result_value_t<parser_result_t<AlternativeRule>>,
-                               result_value_t<parser_result_t<AlternativeRules>>...>);
+  static_assert(are_same_v<parser_result_t<Rule>,
+                           parser_result_t<AlternativeRule>,
+                           parser_result_t<AlternativeRules>...>);
   // clang-format on
 
   using result_type = parser_result_t<Rule>;
