@@ -55,6 +55,64 @@ TEST_CASE("Parser `symbol` fails on input end.", "[parser][symbol]") {
   STATIC_REQUIRE(result.end() == 3);
 }
 
+TEST_CASE("Parser `range` succeeds on the beginning character.", "[parser][range]") {
+  using parser = percy::parser<percy::range<'b', 'd'>>;
+
+  constexpr auto input = percy::static_input("bcd");
+  constexpr auto result = parser::parse(input);
+
+  STATIC_REQUIRE(result.is_success());
+  STATIC_REQUIRE(result.begin() == 0);
+  STATIC_REQUIRE(result.end() == 1);
+  STATIC_REQUIRE(result.get() == 'b');
+}
+
+TEST_CASE("Parser `range` succeeds on an included character.", "[parser][range]") {
+  using parser = percy::parser<percy::range<'b', 'd'>>;
+
+  constexpr auto input = percy::static_input("cde");
+  constexpr auto result = parser::parse(input);
+
+  STATIC_REQUIRE(result.is_success());
+  STATIC_REQUIRE(result.begin() == 0);
+  STATIC_REQUIRE(result.end() == 1);
+  STATIC_REQUIRE(result.get() == 'c');
+}
+
+TEST_CASE("Parser `range` succeeds on the ending character.", "[parser][range]") {
+  using parser = percy::parser<percy::range<'b', 'd'>>;
+
+  constexpr auto input = percy::static_input("def");
+  constexpr auto result = parser::parse(input);
+
+  STATIC_REQUIRE(result.is_success());
+  STATIC_REQUIRE(result.begin() == 0);
+  STATIC_REQUIRE(result.end() == 1);
+  STATIC_REQUIRE(result.get() == 'd');
+}
+
+TEST_CASE("Parser `range` fails on a lesser character.", "[parser][range]") {
+  using parser = percy::parser<percy::range<'b', 'd'>>;
+
+  constexpr auto input = percy::static_input("abc");
+  constexpr auto result = parser::parse(input);
+
+  STATIC_REQUIRE(result.is_failure());
+  STATIC_REQUIRE(result.begin() == 0);
+  STATIC_REQUIRE(result.end() == 1);
+}
+
+TEST_CASE("Parser `range` fails on a greater character.", "[parser][range]") {
+  using parser = percy::parser<percy::range<'b', 'd'>>;
+
+  constexpr auto input = percy::static_input("efg");
+  constexpr auto result = parser::parse(input);
+
+  STATIC_REQUIRE(result.is_failure());
+  STATIC_REQUIRE(result.begin() == 0);
+  STATIC_REQUIRE(result.end() == 1);
+}
+
 struct ab {
   constexpr static std::string_view string = "ab";
 };
@@ -129,6 +187,7 @@ TEST_CASE("Parser `either` succeeds when first rule matches.", "[parser][either]
   STATIC_REQUIRE(result.is_success());
   STATIC_REQUIRE(result.begin() == 0);
   STATIC_REQUIRE(result.end() == 1);
+  STATIC_REQUIRE(result.get() == 'a');
 }
 
 TEST_CASE("Parser `either` succeeds when alternative rule matches.", "[parser][either]") {
@@ -139,6 +198,7 @@ TEST_CASE("Parser `either` succeeds when alternative rule matches.", "[parser][e
   STATIC_REQUIRE(result.is_success());
   STATIC_REQUIRE(result.begin() == 0);
   STATIC_REQUIRE(result.end() == 1);
+  STATIC_REQUIRE(result.get() == 'a');
 }
 
 TEST_CASE("Parser `either` fails when no rule matches.", "[parser][either]") {
@@ -159,6 +219,7 @@ TEST_CASE("Parser `many` succeeds even when rule matches zero times.", "[parser]
   REQUIRE(result.is_success());
   REQUIRE(result.begin() == 0);
   REQUIRE(result.end() == 0);
+  REQUIRE(result.get() == std::vector<char>{});
 }
 
 TEST_CASE("Parser `many` succeeds even when rule matches multiple times.", "[parser][many]") {

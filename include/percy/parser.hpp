@@ -6,6 +6,7 @@
 #include <percy/type_traits.hpp>
 #include <percy/utils.hpp>
 
+#include <string_view>
 #include <tuple>
 #include <variant>
 #include <vector>
@@ -56,6 +57,24 @@ struct parser<symbol<Symbol>> {
     }
 
     return result_type::success(Symbol, {input.position(), input.position() + 1});
+  }
+};
+
+template <char Begin, char End>
+struct parser<range<Begin, End>> {
+  using result_type = result<char>;
+
+  template <typename Input>
+  constexpr static result_type parse(Input input) {
+    if (input.ended()) {
+      return result_type::failure({input.position(), input.position()});
+    }
+
+    if (auto symbol = input.peek(); Begin <= symbol && symbol <= End) {
+      return result_type::success(symbol, {input.position(), input.position() + 1});
+    }
+
+    return result_type::failure({input.position(), input.position() + 1});
   }
 };
 
@@ -137,46 +156,37 @@ struct parser<sequence<Rule, FollowingRule, FollowingRules...>> {
 
 template <typename Rule>
 struct parser<either<Rule>> {
-  using result_type = result<std::variant<result_value_t<parser_result_t<Rule>>>>;
+  using result_type = parser_result_t<Rule>;
 
   template <typename Input>
   constexpr static result_type parse(Input input) {
-    using variant_type = result_value_t<result_type>;
-
-    auto result = parser<Rule>::parse(input);
-
-    if (result.is_failure()) {
-      return result_type::failure(result.span());
-    }
-
-    auto value = variant_type(result.get());
-    return result_type::success(value, result.span());
+    return parser<Rule>::parse(input);
   }
 };
 
 template <typename Rule, typename AlternativeRule, typename... AlternativeRules>
 struct parser<either<Rule, AlternativeRule, AlternativeRules...>> {
+  // todo: move this to the rule itself?
   // clang-format off
-  using result_type = result<std::variant<result_value_t<parser_result_t<Rule>>,
-                                          result_value_t<parser_result_t<AlternativeRule>>,
-                                          result_value_t<parser_result_t<AlternativeRules>>...>>;
+  static_assert(std::is_same_v<result_value_t<parser_result_t<Rule>>,
+                               result_value_t<parser_result_t<AlternativeRule>>,
+                               result_value_t<parser_result_t<AlternativeRules>>...>);
   // clang-format on
+
+  using result_type = parser_result_t<Rule>;
 
   template <typename Input>
   constexpr static result_type parse(Input input) {
-    auto result = parser<either<Rule>>::parse(input);
+    auto result = parser<Rule>::parse(input);
 
     if (result.is_success()) {
-      auto value = append_types<result_value_t<parser_result_t<AlternativeRule>>,
-                                result_value_t<parser_result_t<AlternativeRules>>...>(result.get());
-      return result_type::success(value, result.span());
+      return result;
     }
 
     auto alternative_result = parser<either<AlternativeRule, AlternativeRules...>>::parse(input);
 
-    if (alternative_result) {
-      auto value = prepend_types<result_value_t<parser_result_t<Rule>>>(alternative_result.get());
-      return result_type::success(value, alternative_result.span());
+    if (alternative_result.is_success()) {
+      return alternative_result;
     }
 
     return result_type::failure({input.position(), std::max(result.end(), alternative_result.end())});
@@ -195,8 +205,7 @@ struct parser<many<Rule>> {
     auto input_current = input;
 
     while (auto result = parser<Rule>::parse(input_current)) {
-      auto value = result.get();
-      values.push_back(value);
+      values.push_back(result.get());
       input_current = input.advanced_after(result);
     }
 

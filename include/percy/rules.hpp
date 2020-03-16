@@ -7,6 +7,9 @@ struct end {};
 template <char Symbol>
 struct symbol {};
 
+template <char Begin, char End>
+struct range {};
+
 template <typename StringProvider>
 struct word {};
 
