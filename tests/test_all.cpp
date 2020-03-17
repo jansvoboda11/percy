@@ -2,8 +2,7 @@
 
 #include <catch2/catch.hpp>
 
-#include <percy/parser.hpp>
-#include <percy/static_input.hpp>
+#include <percy.hpp>
 
 // clang-format off
 namespace ast {
