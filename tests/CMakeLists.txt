@@ -14,4 +14,5 @@ add_executable(test_all
   percy/parser.cpp
   percy/result.cpp
   percy/static_input.cpp
+  percy/type_traits.cpp
 )

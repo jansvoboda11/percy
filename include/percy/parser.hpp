@@ -212,9 +212,11 @@ struct parser<one_of<Rule>> {
 
 template <typename Rule, typename AlternativeRule, typename... AlternativeRules>
 struct parser<one_of<Rule, AlternativeRule, AlternativeRules...>> {
-  // todo: assert the result_value_t's of all rules are distinct
-
   // clang-format off
+  static_assert(are_distinct_v<parser_result_t<Rule>,
+                               parser_result_t<AlternativeRule>,
+                               parser_result_t<AlternativeRules>...>);
+
   using result_type = result<std::variant<result_value_t<parser_result_t<Rule>>,
                                           result_value_t<parser_result_t<AlternativeRule>>,
                                           result_value_t<parser_result_t<AlternativeRules>>...>>;
