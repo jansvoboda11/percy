@@ -19,10 +19,10 @@ struct parser {
     auto raw_result = parser<typename Rule::rule>::parse(input);
 
     if (raw_result.is_failure()) {
-      return result_type::failure(raw_result.span());
+      return failure(raw_result.span());
     }
 
-    return result_type::success(Rule::action(raw_result), raw_result.span());
+    return success(Rule::action(raw_result), raw_result.span());
   }
 };
 
@@ -33,10 +33,10 @@ struct parser<end> {
   template <typename Input>
   constexpr static result_type parse(Input input) {
     if (!input.ended()) {
-      return result_type::failure({input.position(), input.position()});
+      return failure({input.position(), input.position()});
     }
 
-    return result_type::success(std::true_type(), {input.position(), input.position()});
+    return success(std::true_type(), {input.position(), input.position()});
   }
 };
 
@@ -47,14 +47,14 @@ struct parser<symbol<Symbol>> {
   template <typename Input>
   constexpr static result_type parse(Input input) {
     if (input.ended()) {
-      return result_type::failure({input.position(), input.position()});
+      return failure({input.position(), input.position()});
     }
 
     if (input.peek() != Symbol) {
-      return result_type::failure({input.position(), input.position() + 1});
+      return failure({input.position(), input.position() + 1});
     }
 
-    return result_type::success(Symbol, {input.position(), input.position() + 1});
+    return success(Symbol, {input.position(), input.position() + 1});
   }
 };
 
@@ -65,14 +65,14 @@ struct parser<range<Begin, End>> {
   template <typename Input>
   constexpr static result_type parse(Input input) {
     if (input.ended()) {
-      return result_type::failure({input.position(), input.position()});
+      return failure({input.position(), input.position()});
     }
 
     if (auto symbol = input.peek(); Begin <= symbol && symbol <= End) {
-      return result_type::success(symbol, {input.position(), input.position() + 1});
+      return success(symbol, {input.position(), input.position() + 1});
     }
 
-    return result_type::failure({input.position(), input.position() + 1});
+    return failure({input.position(), input.position() + 1});
   }
 };
 
@@ -85,10 +85,10 @@ struct parser<word<StringProvider>> {
     auto string = StringProvider::string;
 
     if (starts_with(input, string)) {
-      return result_type::success(string, {input.position(), input.position() + string.length()});
+      return success(string, {input.position(), input.position() + string.length()});
     }
 
-    return result_type::failure({input.position(), input.position() + string.length()});
+    return failure({input.position(), input.position() + string.length()});
   }
 
 private:
@@ -117,11 +117,11 @@ struct parser<sequence<Rule>> {
     auto result = parser<Rule>::parse(input);
 
     if (result.is_failure()) {
-      return result_type::failure(result.span());
+      return failure(result.span());
     }
 
     auto value = tuple_type(result.get());
-    return result_type::success(value, result.span());
+    return success(value, result.span());
   }
 };
 
@@ -138,17 +138,17 @@ struct parser<sequence<Rule, FollowingRule, FollowingRules...>> {
     auto result = parser<sequence<Rule>>::parse(input);
 
     if (result.is_failure()) {
-      return result_type::failure(result.span());
+      return failure(result.span());
     }
 
     auto following_result = parser<sequence<FollowingRule, FollowingRules...>>::parse(input.advanced_to(result.end()));
 
     if (following_result.is_failure()) {
-      return result_type::failure({result.begin(), following_result.end()});
+      return failure({result.begin(), following_result.end()});
     }
 
     auto value = std::tuple_cat(result.get(), following_result.get());
-    return result_type::success(value, {result.begin(), following_result.end()});
+    return success(value, {result.begin(), following_result.end()});
   }
 };
 
@@ -180,7 +180,7 @@ struct parser<either<Rule, AlternativeRule, AlternativeRules...>> {
       return alternative_result;
     }
 
-    return result_type::failure({input.position(), std::max(result.end(), alternative_result.end())});
+    return failure({input.position(), std::max(result.end(), alternative_result.end())});
   }
 };
 
@@ -195,10 +195,10 @@ struct parser<one_of<Rule>> {
     auto result = parser<Rule>::parse(input);
 
     if (result.is_failure()) {
-      return result_type::failure(result.span());
+      return failure(result.span());
     }
 
-    return result_type::success(variant_type(result.get()), result.span());
+    return success(variant_type(result.get()), result.span());
   }
 };
 
@@ -221,16 +221,16 @@ struct parser<one_of<Rule, AlternativeRule, AlternativeRules...>> {
     auto result = parser<one_of<Rule>>::parse(input);
 
     if (result.is_success()) {
-      return result_type::success(cast_variant(result.get()), result.span());
+      return success(cast_variant(result.get()), result.span());
     }
 
     auto alternative_result = parser<one_of<AlternativeRule, AlternativeRules...>>::parse(input);
 
     if (alternative_result.is_success()) {
-      return result_type::success(cast_variant(alternative_result.get()), alternative_result.span());
+      return success(cast_variant(alternative_result.get()), alternative_result.span());
     }
 
-    return result_type::failure({input.position(), std::max(result.end(), alternative_result.end())});
+    return failure({input.position(), std::max(result.end(), alternative_result.end())});
   }
 };
 
@@ -250,7 +250,7 @@ struct parser<many<Rule>> {
       input_current = input.advanced_after(result);
     }
 
-    return result_type::success(values, {input.position(), input_current.position()});
+    return success(values, {input.position(), input_current.position()});
   }
 };
 } // namespace percy

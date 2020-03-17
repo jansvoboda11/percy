@@ -3,11 +3,7 @@
 
 #include <variant>
 
-#include <cassert>
-
 namespace percy {
-class error {};
-
 class input_span {
   std::size_t begin_;
   std::size_t end_;
@@ -24,6 +20,19 @@ public:
   }
 };
 
+class failure {
+  input_span span_;
+
+public:
+  constexpr explicit failure(input_span span) : span_(span) {}
+
+  constexpr input_span span() const {
+    return span_;
+  }
+};
+
+class error {};
+
 template <typename T>
 class result {
   std::variant<T, error> value_;
@@ -35,15 +44,11 @@ class result {
 public:
   using value_type = T;
 
-  constexpr result(const result<T>& other) : value_(other.value_), span_(other.span_) {}
+  constexpr explicit result(T value, input_span span) : value_(value), span_(span) {}
 
-  constexpr static result<T> success(T value, input_span span) {
-    return result<T>(value, span);
-  }
+  constexpr explicit result(error error, input_span span) : value_(error), span_(span) {}
 
-  constexpr static result<T> failure(input_span span) {
-    return result<T>(error(), span);
-  }
+  constexpr result(const failure& fail) : value_(error()), span_(fail.span()) {}
 
   constexpr bool is_success() const {
     return std::holds_alternative<T>(value_);
@@ -70,15 +75,14 @@ public:
   }
 
   constexpr auto get() const {
-    assert(is_success());
     return std::get<T>(value_);
   }
-
-private:
-  constexpr explicit result(T value, input_span span) : value_(value), span_(span) {}
-
-  constexpr explicit result(error error, input_span span) : value_(error), span_(span) {}
 };
+
+template <typename T>
+constexpr result<T> success(T value, input_span span) {
+  return result<T>(value, span);
+}
 } // namespace percy
 
 #endif

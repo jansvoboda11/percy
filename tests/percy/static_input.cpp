@@ -43,7 +43,7 @@ TEST_CASE("Non-empty input advanced to end.", "[inputs][static_input]") {
 }
 
 TEST_CASE("Non-empty input advanced after result.", "[inputs][static_input]") {
-  constexpr auto result = percy::result<char>::success('b', {1, 2});
+  constexpr auto result = percy::success('b', {1, 2});
   constexpr auto input = percy::static_input("abcd").advanced_after(result);
 
   STATIC_REQUIRE(!input.ended());
