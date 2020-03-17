@@ -35,57 +35,39 @@ template <typename Rule>
 using action_return_t = typename action_return<Rule>::type;
 
 template <typename... Ts>
-struct are_identical_impl;
+struct are_same_impl;
 
 template <typename T>
-struct are_identical_impl<T> {
+struct are_same_impl<T> {
   constexpr static bool value = true;
 };
 
 template <typename T, typename... Ts>
-struct are_identical_impl<T, Ts...> {
+struct are_same_impl<T, Ts...> {
   constexpr static bool value = std::conjunction_v<std::is_same<T, Ts>...>;
 };
 
-/// Determines whether all types `Ts...` are identical.
+/// Determines whether all types in `Ts...` are the same.
 template <typename... Ts>
-inline constexpr bool are_identical_v = are_identical_impl<Ts...>::value;
+inline constexpr bool are_same_v = are_same_impl<Ts...>::value;
 
-/// Returns the type at index `Index`.
-template <std::size_t Index, typename... Ts>
-using nth_t = std::tuple_element_t<Index, std::tuple<Ts...>>;
+template <typename... Ts>
+struct are_unique;
 
-/// The algorithm iterates over a list of types `Ts...` of size `Size` with two indices `Left` and `Right`.
-/// The inner iteration compares the type at index `Left` with each type between index `Left + 1` and `Size - 1`
-/// (indexed by `Right`). The outer iteration sets the index `Left` to values from `0` to `Size - 1`.
-template <std::size_t Left, std::size_t Right, std::size_t Size, typename... Ts>
-struct are_distinct_impl;
-
-/// The terminating condition of the outer iteration: `Left == Size - 1`.
-/// Returning `true` here ensures that a list with only a single type is considered distinct.
-template <std::size_t Left, std::size_t Right, typename... Ts>
-struct are_distinct_impl<Left, Right, Left + 1, Ts...> {
+template <typename T>
+struct are_unique<T> {
   constexpr static bool value = true;
 };
 
-/// The terminating condition of the inner iteration: `Right == Size - 1`.
-/// The algorithm continues with new inner iteration with incremented `Left`.
-template <std::size_t Left, std::size_t Right, typename... Ts>
-struct are_distinct_impl<Left, Right, Right + 1, Ts...> {
-  constexpr static bool value = !std::is_same_v<nth_t<Left, Ts...>, nth_t<Right, Ts...>> &&
-                                are_distinct_impl<Left + 1, Left + 2, Right + 1, Ts...>::value;
+template <typename T1, typename T2, typename... Ts>
+struct are_unique<T1, T2, Ts...> {
+  constexpr static bool value =
+      !std::is_same_v<T1, T2> && are_unique<T1, Ts...>::value && are_unique<T2, Ts...>::value;
 };
 
-/// The common case where `Left < Size - 1 && Right < Size - 1`.
-template <std::size_t Left, std::size_t Right, std::size_t Size, typename... Ts>
-struct are_distinct_impl {
-  constexpr static bool value = !std::is_same_v<nth_t<Left, Ts...>, nth_t<Right, Ts...>> &&
-                                are_distinct_impl<Left, Right + 1, Size, Ts...>::value;
-};
-
-/// Determines whether all types `Ts...` are distinct.
+/// Determines whether all types in `Ts...` are unique.
 template <typename... Ts>
-inline constexpr bool are_distinct_v = are_distinct_impl<0, 1, sizeof...(Ts), Ts...>::value;
+inline constexpr bool are_unique_v = are_unique<Ts...>::value;
 } // namespace percy
 
 #endif

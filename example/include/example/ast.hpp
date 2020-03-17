@@ -3,6 +3,8 @@
 
 #include <variant>
 
+#include <cstdint>
+
 namespace example::ast {
 struct expr;
 

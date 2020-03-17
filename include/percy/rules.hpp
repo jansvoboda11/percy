@@ -22,14 +22,14 @@ struct sequence {};
 
 template <typename Rule, typename... AlternativeRules>
 struct either {
-  static_assert(are_identical_v<parser_result_t<Rule>, parser_result_t<AlternativeRules>...>,
-                "The `either` rule requires all sub-rules to produce the same type.");
+  static_assert(are_same_v<parser_result_t<Rule>, parser_result_t<AlternativeRules>...>,
+                "The `either` rule requires each alternative to produce the same type.");
 };
 
 template <typename Rule, typename... AlternativeRules>
 struct one_of {
-  static_assert(are_distinct_v<parser_result_t<Rule>, parser_result_t<AlternativeRules>...>,
-                "The `one_of` rule requires all sub-rules to produce distinct type.");
+  static_assert(are_unique_v<parser_result_t<Rule>, parser_result_t<AlternativeRules>...>,
+                "The `one_of` rule requires each alternative to produce an unique type.");
 };
 
 template <typename Rule>
