@@ -34,7 +34,7 @@ struct action_return {
 template <typename Rule>
 using action_return_t = typename action_return<Rule>::type;
 
-template <typename ...Ts>
+template <typename... Ts>
 struct are_identical_impl;
 
 template <typename T>
@@ -42,7 +42,7 @@ struct are_identical_impl<T> {
   constexpr static bool value = true;
 };
 
-template <typename T, typename ...Ts>
+template <typename T, typename... Ts>
 struct are_identical_impl<T, Ts...> {
   constexpr static bool value = std::conjunction_v<std::is_same<T, Ts>...>;
 };
