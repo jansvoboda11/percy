@@ -3,7 +3,6 @@
 
 #include "result.hpp"
 #include "rules.hpp"
-#include "type_traits.hpp"
 
 #include <string_view>
 #include <tuple>
@@ -165,13 +164,6 @@ struct parser<either<Rule>> {
 
 template <typename Rule, typename AlternativeRule, typename... AlternativeRules>
 struct parser<either<Rule, AlternativeRule, AlternativeRules...>> {
-  // todo: move this to the rule itself?
-  // clang-format off
-  static_assert(are_same_v<parser_result_t<Rule>,
-                           parser_result_t<AlternativeRule>,
-                           parser_result_t<AlternativeRules>...>);
-  // clang-format on
-
   using result_type = parser_result_t<Rule>;
 
   template <typename Input>
@@ -213,10 +205,6 @@ struct parser<one_of<Rule>> {
 template <typename Rule, typename AlternativeRule, typename... AlternativeRules>
 struct parser<one_of<Rule, AlternativeRule, AlternativeRules...>> {
   // clang-format off
-  static_assert(are_distinct_v<parser_result_t<Rule>,
-                               parser_result_t<AlternativeRule>,
-                               parser_result_t<AlternativeRules>...>);
-
   using result_type = result<std::variant<result_value_t<parser_result_t<Rule>>,
                                           result_value_t<parser_result_t<AlternativeRule>>,
                                           result_value_t<parser_result_t<AlternativeRules>>...>>;

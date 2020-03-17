@@ -3,8 +3,6 @@
 
 #include <variant>
 
-#include <cstdint>
-
 #include <percy/parser.hpp>
 
 namespace example {
