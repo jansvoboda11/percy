@@ -23,6 +23,7 @@ struct call {
   char name_;
   const expr* arg1_;
   const expr* arg2_;
+  constexpr ~call();
 };
 
 struct expr {
@@ -31,6 +32,16 @@ struct expr {
   constexpr explicit expr(call value) : value(value) {}
   std::variant<literal, variable, call> value;
 };
+
+constexpr call::~call() {
+  if (arg1_) {
+    delete arg1_;
+  }
+
+  if (arg2_) {
+    delete arg2_;
+  }
+}
 } // namespace example::ast
 
 #endif
