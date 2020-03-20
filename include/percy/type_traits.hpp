@@ -61,13 +61,25 @@ struct are_unique<T> {
 
 template <typename T1, typename T2, typename... Ts>
 struct are_unique<T1, T2, Ts...> {
-  constexpr static bool value =
-      !std::is_same_v<T1, T2> && are_unique<T1, Ts...>::value && are_unique<T2, Ts...>::value;
+  constexpr static bool value = !std::is_same_v<T1, T2> && are_unique<T1, Ts...>::value && are_unique<T2, Ts...>::value;
 };
 
 /// Determines whether all types in `Ts...` are unique.
 template <typename... Ts>
 inline constexpr bool are_unique_v = are_unique<Ts...>::value;
+
+template <typename U, typename... Ts>
+struct index_of;
+
+template <typename U, typename... Ts>
+struct index_of<U, U, Ts...> : std::integral_constant<std::size_t, 0> {};
+
+template <typename U, typename T, typename... Ts>
+struct index_of<U, T, Ts...> : std::integral_constant<std::size_t, 1 + index_of<U, Ts...>::value> {};
+
+/// The index of the type `U` in the list `Ts...`.
+template <typename U, typename... Ts>
+constexpr inline std::size_t index_of_v = index_of<U, Ts...>::value;
 } // namespace percy
 
 #endif
