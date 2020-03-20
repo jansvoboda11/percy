@@ -120,8 +120,7 @@ struct parser<sequence<Rule>> {
       return failure(result.span());
     }
 
-    auto value = tuple_type(result.get());
-    return success(value, result.span());
+    return success(tuple_type(result.get()), result.span());
   }
 };
 
@@ -153,14 +152,7 @@ struct parser<sequence<Rule, FollowingRule, FollowingRules...>> {
 };
 
 template <typename Rule>
-struct parser<either<Rule>> {
-  using result_type = parser_result_t<Rule>;
-
-  template <typename Input>
-  constexpr static result_type parse(Input input) {
-    return parser<Rule>::parse(input);
-  }
-};
+struct parser<either<Rule>> : parser<Rule> {};
 
 template <typename Rule, typename AlternativeRule, typename... AlternativeRules>
 struct parser<either<Rule, AlternativeRule, AlternativeRules...>> {
@@ -242,15 +234,16 @@ struct parser<many<Rule>> {
   constexpr static result_type parse(Input input) {
     using vector_type = result_value_t<result_type>;
 
-    vector_type values;
-    auto input_current = input;
+    auto start = input;
 
-    while (auto result = parser<Rule>::parse(input_current)) {
+    vector_type values;
+
+    while (auto result = parser<Rule>::parse(input)) {
       values.push_back(result.get());
-      input_current = input.advanced_after(result);
+      input = input.advanced_after(result);
     }
 
-    return success(values, {input.position(), input_current.position()});
+    return success(values, {start.position(), input.position()});
   }
 };
 } // namespace percy
