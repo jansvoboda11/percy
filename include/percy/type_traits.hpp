@@ -80,6 +80,40 @@ struct index_of<U, T, Ts...> : std::integral_constant<std::size_t, 1 + index_of<
 /// The index of the type `U` in the list `Ts...`.
 template <typename U, typename... Ts>
 constexpr inline std::size_t index_of_v = index_of<U, Ts...>::value;
+
+template <typename U, typename... Ts>
+struct contains;
+
+template <typename U>
+struct contains<U> {
+  constexpr static bool value = false;
+};
+
+template <typename U, typename T, typename... Ts>
+struct contains<U, T, Ts...> {
+  constexpr static bool value = std::is_same_v<U, T> || contains<U, Ts...>::value;
+};
+
+/// Determines whether the list `Ts...` contains the type `U`.
+template <typename U, typename... Ts>
+constexpr inline bool contains_v = contains<U, Ts...>::value;
+
+template <std::size_t N, typename... Ts>
+struct nth;
+
+template <typename T, typename... Ts>
+struct nth<0, T, Ts...> {
+  using type = T;
+};
+
+template <std::size_t N, typename T, typename... Ts>
+struct nth<N, T, Ts...> {
+  using type = typename nth<N - 1, Ts...>::type;
+};
+
+/// The N-th type in list `Ts...`.
+template <std::size_t N, typename... Ts>
+using nth_t = typename nth<N, Ts...>::type;
 } // namespace percy
 
 #endif
