@@ -101,54 +101,54 @@ TEST_CASE("The set & get operations of `variadic_union` have expected semantics"
   }
 }
 
-// this is a concept of a testing DSL
-// todo: decide if this is worth expanding upon
-//
-//template <typename ...Ts>
-//using union_of = percy::variadic_union<Ts...>;
-//
-//template <typename T>
-//struct set_t {
-//  T value_;
-//  constexpr explicit set_t(T value) : value_(value) {}
-//};
-//
-//template <typename T>
-//constexpr set_t<T> set(T value) {
-//  return set_t(value);
-//}
-//
-//template <typename T>
-//struct get {};
-//
-//struct destroy_t {
-//  std::size_t index_;
-//  constexpr explicit destroy_t(std::size_t index) : index_(index) {}
-//};
-//
-//constexpr destroy_t destroy(std::size_t index) {
-//  return destroy_t(index);
-//}
-//
-//template <typename... Ts, typename Set, typename Get>
-//constexpr auto test(percy::variadic_union<Ts...> tested_union, set_t<Set> set, get<Get>, destroy_t destroy) {
-//  percy::set(tested_union, std::move(set.value_));
-//  auto result = percy::get<Get>(tested_union);
-//  percy::destroy(tested_union, destroy.index_);
-//  return result;
-//}
-//
-//TEST_CASE("Set each element of a variadic union.", "[variadic_union]") {
-//  constexpr auto value_0 = test(union_of<bool, int, char, unsigned>(true), set(false), get<bool>(), destroy(0));
-//  constexpr auto value_1 = test(union_of<bool, int, char, unsigned>(true), set(42), get<int>(), destroy(1));
-//  constexpr auto value_2 = test(union_of<bool, int, char, unsigned>(true), set('x'), get<char>(), destroy(2));
-//  constexpr auto value_3 = test(union_of<bool, int, char, unsigned>(true), set(42u), get<unsigned>(), destroy(3));
-//
-//  STATIC_REQUIRE(value_0 == false);
-//  STATIC_REQUIRE(value_1 == 42);
-//  STATIC_REQUIRE(value_2 == 'x');
-//  STATIC_REQUIRE(value_3 == 42u);
-//}
+// todo: The following is a concept of a testing DSL that enables `set` & `destroy` operations in constexpr.
+//       Decide if this is worth expending upon.
+
+template <typename... Ts>
+using union_of = percy::variadic_union<Ts...>;
+
+template <typename T>
+struct set_t {
+  T value_;
+  constexpr explicit set_t(T value) : value_(value) {}
+};
+
+template <typename T>
+constexpr set_t<T> set(T value) {
+  return set_t(value);
+}
+
+template <typename T>
+struct get {};
+
+struct destroy_t {
+  std::size_t index_;
+  constexpr explicit destroy_t(std::size_t index) : index_(index) {}
+};
+
+constexpr destroy_t destroy(std::size_t index) {
+  return destroy_t(index);
+}
+
+template <typename... Ts, typename Set, typename Get>
+constexpr auto test(percy::variadic_union<Ts...> tested_union, set_t<Set> set, get<Get>, destroy_t destroy) {
+  percy::set(tested_union, std::move(set.value_));
+  auto result = percy::get<Get>(tested_union);
+  percy::destroy(tested_union, destroy.index_);
+  return result;
+}
+
+TEST_CASE("Experimental: set and get each element of a variadic union.", "[variadic_union]") {
+  constexpr auto value_0 = test(union_of<bool, int, char, unsigned>(true), set(false), get<bool>(), destroy(0));
+  constexpr auto value_1 = test(union_of<bool, int, char, unsigned>(true), set(42), get<int>(), destroy(1));
+  constexpr auto value_2 = test(union_of<bool, int, char, unsigned>(true), set('x'), get<char>(), destroy(2));
+  constexpr auto value_3 = test(union_of<bool, int, char, unsigned>(true), set(42u), get<unsigned>(), destroy(3));
+
+  STATIC_REQUIRE(value_0 == false);
+  STATIC_REQUIRE(value_1 == 42);
+  STATIC_REQUIRE(value_2 == 'x');
+  STATIC_REQUIRE(value_3 == 42u);
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////// LIFETIME TESTS HELPERS ////////////////////////////////////////////////
@@ -224,13 +224,13 @@ TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly.", "[var
     constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
       lifetime element(&summary);
 
-      percy::variadic_union<lifetime> uni(std::move(element));
-      percy::destroy(uni, 0);
+      percy::variadic_union<lifetime> union_0(std::move(element));
+      percy::destroy(union_0, 0);
     });
 
-    // 1. move: local variable -> constructor -> value
+    // 1. move: local variable -> union constructor -> union value
     // 2. destroy: local variable
-    // 2. destroy: value
+    // 2. destroy: union value
     STATIC_REQUIRE(summary.move_count == 1);
     STATIC_REQUIRE(summary.copy_count == 0);
     STATIC_REQUIRE(summary.destroy_count == 2);
@@ -240,13 +240,11 @@ TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly.", "[var
     constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
       lifetime element(&summary);
 
-      percy::variadic_union<lifetime, int> uni(std::move(element));
-      percy::destroy(uni, 0);
+      percy::variadic_union<lifetime, int> union_0(std::move(element));
+      percy::destroy(union_0, 0);
     });
 
-    // 1. move: local variable -> outer constructor -> outer value
-    // 2. destroy: local variable
-    // 3. destroy: outer value
+    // same logic as above
     STATIC_REQUIRE(summary.move_count == 1);
     STATIC_REQUIRE(summary.copy_count == 0);
     STATIC_REQUIRE(summary.destroy_count == 2);
@@ -256,13 +254,11 @@ TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly.", "[var
     constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
       lifetime element(&summary);
 
-      percy::variadic_union<int, lifetime> uni(std::move(element));
-      percy::destroy(uni, 1);
+      percy::variadic_union<int, lifetime> union_0(std::move(element));
+      percy::destroy(union_0, 1);
     });
 
-    // 1. move: local variable -> outer constructor -> inner constructor -> inner value
-    // 2. destroy: local variable
-    // 3. destroy: inner value
+    // same logic as above
     STATIC_REQUIRE(summary.move_count == 1);
     STATIC_REQUIRE(summary.copy_count == 0);
     STATIC_REQUIRE(summary.destroy_count == 2);
@@ -279,10 +275,10 @@ TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly during m
       percy::destroy(moved, 0);
     });
 
-    // 1. move: local variable -> `original` constructor -> `original` value
-    // 2. move: `original` value -> `moved` value
+    // 1. move: local variable -> union constructor -> `original` union value
+    // 2. move: `original` union value -> move -> `moved` union value
     // 3. destroy: local variable
-    // 4. destroy: `moved` value
+    // 4. destroy: `moved` union value
     STATIC_REQUIRE(summary.move_count == 2);
     STATIC_REQUIRE(summary.copy_count == 0);
     STATIC_REQUIRE(summary.destroy_count == 2);
@@ -297,10 +293,7 @@ TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly during m
       percy::destroy(moved, 0);
     });
 
-    // 1. move: local variable -> outer `original` constructor -> outer `original` value
-    // 2. move: outer `original` value -> outer `moved` value
-    // 3. destroy: local variable
-    // 4. destroy: outer `moved` value
+    // same logic as above
     STATIC_REQUIRE(summary.move_count == 2);
     STATIC_REQUIRE(summary.copy_count == 0);
     STATIC_REQUIRE(summary.destroy_count == 2);
@@ -315,10 +308,7 @@ TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly during m
       percy::destroy(moved, 1);
     });
 
-    // 1. move: local variable -> outer `original` constructor -> inner `original` constructor -> inner `original` value
-    // 2. move: inner `original` value -> inner `moved` value
-    // 3. destroy: local variable
-    // 4. destroy: inner `moved` value
+    // same logic as above
     STATIC_REQUIRE(summary.move_count == 2);
     STATIC_REQUIRE(summary.copy_count == 0);
     STATIC_REQUIRE(summary.destroy_count == 2);
@@ -336,11 +326,11 @@ TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly during c
       percy::destroy(original, 0);
     });
 
-    // 1. move: local variable -> `original` constructor -> `original` value
-    // 2. copy: `original` value -> `copy` value
+    // 1. move: local variable -> union constructor -> `original` union value
+    // 2. copy: `original` union value -> copy -> `copy` union value
     // 3. destroy: local variable
-    // 4. destroy: `copy` value
-    // 5. destroy: `original` value
+    // 4. destroy: `copy` union value
+    // 5. destroy: `original` union value
     REQUIRE(summary.move_count == 1);
     REQUIRE(summary.copy_count == 1);
     REQUIRE(summary.destroy_count == 3);
@@ -356,11 +346,7 @@ TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly during c
       percy::destroy(original, 0);
     });
 
-    // 1. move: local variable -> outer `original` constructor -> outer `original` value
-    // 2. copy: outer `original` value -> outer `copy` value
-    // 3. destroy: local variable
-    // 4. destroy: outer `copy` value
-    // 5. destroy: outer `original` value
+    // same logic as above
     STATIC_REQUIRE(summary.move_count == 1);
     STATIC_REQUIRE(summary.copy_count == 1);
     STATIC_REQUIRE(summary.destroy_count == 3);
@@ -376,11 +362,7 @@ TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly during c
       percy::destroy(original, 1);
     });
 
-    // 1. move: local variable -> outer `original` constructor -> inner `original` constructor -> inner `original` value
-    // 2. copy: inner `original` value -> inner `copy` value
-    // 3. destroy: local variable
-    // 4. destroy: inner `copy` value
-    // 5. destroy: inner `original` value
+    // same logic as above
     STATIC_REQUIRE(summary.move_count == 1);
     STATIC_REQUIRE(summary.copy_count == 1);
     STATIC_REQUIRE(summary.destroy_count == 3);
@@ -393,20 +375,20 @@ TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly during m
       lifetime element(&summary_1);
       lifetime replacement(&summary_2);
 
-      percy::variadic_union<lifetime> uni(std::move(element));
-      percy::set(uni, std::move(replacement));
-      percy::destroy(uni, 0);
+      percy::variadic_union<lifetime> union_0(std::move(element));
+      percy::set(union_0, std::move(replacement));
+      percy::destroy(union_0, 0);
     });
 
-    // 1. move: local variable -> constructor -> value
+    // 1. move: local variable -> union constructor -> union value
     // 2. destroy: local variable
     STATIC_REQUIRE(summaries.first.move_count == 1);
     STATIC_REQUIRE(summaries.first.copy_count == 0);
     STATIC_REQUIRE(summaries.first.destroy_count == 1); // the value is not destroyed automatically!
 
-    // 3. move: local variable -> set -> value
+    // 3. move: local variable -> set -> union value
     // 4. destroy: local variable
-    // 5. destroy: value
+    // 5. destroy: union value
     STATIC_REQUIRE(summaries.second.move_count == 1);
     STATIC_REQUIRE(summaries.second.copy_count == 0);
     STATIC_REQUIRE(summaries.second.destroy_count == 2);
@@ -417,20 +399,17 @@ TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly during m
       lifetime element(&summary_1);
       lifetime replacement(&summary_2);
 
-      percy::variadic_union<lifetime, int> uni(std::move(element));
-      percy::set(uni, std::move(replacement));
-      percy::destroy(uni, 0);
+      percy::variadic_union<lifetime, int> union_0(std::move(element));
+      percy::set(union_0, std::move(replacement));
+      percy::destroy(union_0, 0);
     });
 
-    // 1. move: local variable -> constructor -> value
-    // 2. destroy: local variable
+    // same logic as above
     STATIC_REQUIRE(summaries.first.move_count == 1);
     STATIC_REQUIRE(summaries.first.copy_count == 0);
-    STATIC_REQUIRE(summaries.first.destroy_count == 1); // the value is not destroyed automatically!
+    STATIC_REQUIRE(summaries.first.destroy_count == 1);
 
-    // 3. move: local variable -> set -> value
-    // 4. destroy: local variable
-    // 5. destroy: value
+    // same logic as above
     STATIC_REQUIRE(summaries.second.move_count == 1);
     STATIC_REQUIRE(summaries.second.copy_count == 0);
     STATIC_REQUIRE(summaries.second.destroy_count == 2);
@@ -441,20 +420,17 @@ TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly during m
       lifetime element(&summary_1);
       lifetime replacement(&summary_2);
 
-      percy::variadic_union<int, lifetime> uni(std::move(element));
-      percy::set(uni, std::move(replacement));
-      percy::destroy(uni, 1);
+      percy::variadic_union<int, lifetime> union_0(std::move(element));
+      percy::set(union_0, std::move(replacement));
+      percy::destroy(union_0, 1);
     });
 
-    // 1. move: local variable -> outer constructor -> inner constructor -> inner value
-    // 2. destroy: local variable
+    // same logic as above
     STATIC_REQUIRE(summaries.first.move_count == 1);
     STATIC_REQUIRE(summaries.first.copy_count == 0);
-    STATIC_REQUIRE(summaries.first.destroy_count == 1); // the value is not destroyed automatically!
+    STATIC_REQUIRE(summaries.first.destroy_count == 1);
 
-    // 3. move: local variable -> set -> value
-    // 4. destroy: local variable
-    // 5. destroy: value
+    // same logic as above
     STATIC_REQUIRE(summaries.second.move_count == 1);
     STATIC_REQUIRE(summaries.second.copy_count == 0);
     STATIC_REQUIRE(summaries.second.destroy_count == 2);
@@ -467,20 +443,20 @@ TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly during c
       lifetime element(&summary_1);
       lifetime replacement(&summary_2);
 
-      percy::variadic_union<lifetime> uni(std::move(element));
-      percy::set(uni, replacement);
-      percy::destroy(uni, 0);
+      percy::variadic_union<lifetime> union_0(std::move(element));
+      percy::set(union_0, replacement);
+      percy::destroy(union_0, 0);
     });
 
-    // 1. move: local variable -> constructor -> value
+    // 1. move: local variable -> union constructor -> union value
     // 2. destroy: local variable
     STATIC_REQUIRE(summaries.first.move_count == 1);
     STATIC_REQUIRE(summaries.first.copy_count == 0);
     STATIC_REQUIRE(summaries.first.destroy_count == 1); // the value is not destroyed automatically!
 
-    // 3. copy: local variable -> set -> value
+    // 3. copy: local variable -> set -> union value
     // 4. destroy: local variable
-    // 5. destroy: value
+    // 5. destroy: union value
     STATIC_REQUIRE(summaries.second.move_count == 0);
     STATIC_REQUIRE(summaries.second.copy_count == 1);
     STATIC_REQUIRE(summaries.second.destroy_count == 2);
@@ -491,20 +467,17 @@ TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly during c
       lifetime element(&summary_1);
       lifetime replacement(&summary_2);
 
-      percy::variadic_union<lifetime, int> uni(std::move(element));
-      percy::set(uni, replacement);
-      percy::destroy(uni, 0);
+      percy::variadic_union<lifetime, int> union_0(std::move(element));
+      percy::set(union_0, replacement);
+      percy::destroy(union_0, 0);
     });
 
-    // 1. move: local variable -> constructor -> value
-    // 2. destroy: local variable
+    // same logic as above
     STATIC_REQUIRE(summaries.first.move_count == 1);
     STATIC_REQUIRE(summaries.first.copy_count == 0);
-    STATIC_REQUIRE(summaries.first.destroy_count == 1); // the value is not destroyed automatically!
+    STATIC_REQUIRE(summaries.first.destroy_count == 1);
 
-    // 3. copy: local variable -> set -> value
-    // 4. destroy: local variable
-    // 5. destroy: value
+    // same logic as above
     STATIC_REQUIRE(summaries.second.move_count == 0);
     STATIC_REQUIRE(summaries.second.copy_count == 1);
     STATIC_REQUIRE(summaries.second.destroy_count == 2);
@@ -515,20 +488,17 @@ TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly during c
       lifetime element(&summary_1);
       lifetime replacement(&summary_2);
 
-      percy::variadic_union<int, lifetime> uni(std::move(element));
-      percy::set(uni, replacement);
-      percy::destroy(uni, 1);
+      percy::variadic_union<int, lifetime> union_0(std::move(element));
+      percy::set(union_0, replacement);
+      percy::destroy(union_0, 1);
     });
 
-    // 1. move: local variable -> outer constructor -> inner constructor -> inner value
-    // 2. destroy: local variable
+    // same logic as above
     STATIC_REQUIRE(summaries.first.move_count == 1);
     STATIC_REQUIRE(summaries.first.copy_count == 0);
-    STATIC_REQUIRE(summaries.first.destroy_count == 1); // the value is not destroyed automatically!
+    STATIC_REQUIRE(summaries.first.destroy_count == 1);
 
-    // 3. copy: local variable -> set -> value
-    // 4. destroy: local variable
-    // 5. destroy: value
+    // same logic as above
     STATIC_REQUIRE(summaries.second.move_count == 0);
     STATIC_REQUIRE(summaries.second.copy_count == 1);
     STATIC_REQUIRE(summaries.second.destroy_count == 2);
