@@ -10,8 +10,24 @@ namespace percy {
 /////////////////////////////////////////////// VARIADIC_UNION INTERFACE ///////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// todo: Decide if: * `move` and `copy` should be moved to `percy::detail` namespace,
+//                  * `destroy` should become a member function,
+//                  * `get` and `set` should become member functions.
+
 template <typename... Ts>
-union variadic_union;
+union variadic_union {
+  template <typename T, std::enable_if_t<contains_v<T, Ts...>, int> = 0>
+  constexpr explicit variadic_union(const T& value);
+
+  template <typename T, std::enable_if_t<contains_v<T, Ts...>, int> = 0>
+  constexpr explicit variadic_union(T&& value);
+
+  constexpr variadic_union(variadic_union<Ts...>&& other, std::size_t index);
+
+  constexpr variadic_union(const variadic_union<Ts...>& other, std::size_t index);
+
+  constexpr ~variadic_union();
+};
 
 template <typename... Ts>
 constexpr void move(variadic_union<Ts...>& target, variadic_union<Ts...>&& source, std::size_t index);
