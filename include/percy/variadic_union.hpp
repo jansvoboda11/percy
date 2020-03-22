@@ -10,10 +10,6 @@ namespace percy {
 /////////////////////////////////////////////// VARIADIC_UNION INTERFACE ///////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// todo: Decide if: * `move` and `copy` should be moved to `percy::detail` namespace,
-//                  * `destroy` should become a member function,
-//                  * `get` and `set` should become member functions.
-
 template <typename... Ts>
 union variadic_union {
   template <typename T, std::enable_if_t<contains_v<T, Ts...>, int> = 0>
@@ -28,12 +24,6 @@ union variadic_union {
 
   constexpr ~variadic_union();
 };
-
-template <typename... Ts>
-constexpr void move(variadic_union<Ts...>& target, variadic_union<Ts...>&& source, std::size_t index);
-
-template <typename... Ts>
-constexpr void copy(variadic_union<Ts...>& target, const variadic_union<Ts...>& source, std::size_t index);
 
 template <typename... Ts>
 constexpr void destroy(std::size_t index);
@@ -54,6 +44,18 @@ constexpr void set(variadic_union<Ts...>& u, const U& value);
 //////////////////////////////////////////// SINGLE ELEMENT IMPLEMENTATION /////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+namespace detail {
+template <typename T>
+constexpr void move(variadic_union<T>& dst, variadic_union<T>&& src, std::size_t index) {
+  dst.head_ = std::forward<T>(src.head_);
+}
+
+template <typename T>
+constexpr void copy(variadic_union<T>& dst, const variadic_union<T>& src, std::size_t index) {
+  dst.head_ = src.head_;
+}
+} // namespace detail
+
 template <typename T>
 union variadic_union<T> {
   T head_;
@@ -63,25 +65,15 @@ union variadic_union<T> {
   constexpr explicit variadic_union(T&& value) : head_(std::forward<T>(value)) {}
 
   constexpr variadic_union(variadic_union<T>&& other, std::size_t index) {
-    move(*this, std::forward<variadic_union<T>>(other), index);
+    detail::move(*this, std::forward<variadic_union<T>>(other), index);
   }
 
   constexpr variadic_union(const variadic_union<T>& other, std::size_t index) {
-    copy(*this, other, index);
+    detail::copy(*this, other, index);
   }
 
   constexpr ~variadic_union() {}
 };
-
-template <typename T>
-constexpr void move(variadic_union<T>& target, variadic_union<T>&& source, std::size_t index) {
-  target.head_ = std::forward<T>(source.head_);
-}
-
-template <typename T>
-constexpr void copy(variadic_union<T>& target, const variadic_union<T>& source, std::size_t index) {
-  target.head_ = source.head_;
-}
 
 template <typename T>
 constexpr void destroy(variadic_union<T>& u, std::size_t index) {
@@ -91,6 +83,26 @@ constexpr void destroy(variadic_union<T>& u, std::size_t index) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// MULTIPLE ELEMENTS IMPLEMENTATION ///////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace detail {
+template <typename T1, typename T2, typename... Ts>
+constexpr void move(variadic_union<T1, T2, Ts...>& dst, variadic_union<T1, T2, Ts...>&& src, std::size_t index) {
+  if (index == 0) {
+    dst.head_ = std::forward<T1>(src.head_);
+  } else {
+    move(dst.tail_, std::forward<variadic_union<T2, Ts...>>(src.tail_), index - 1);
+  }
+}
+
+template <typename T1, typename T2, typename... Ts>
+constexpr void copy(variadic_union<T1, T2, Ts...>& dst, const variadic_union<T1, T2, Ts...>& src, std::size_t index) {
+  if (index == 0) {
+    dst.head_ = src.head_;
+  } else {
+    copy(dst.tail_, src.tail_, index - 1);
+  }
+}
+} // namespace detail
 
 template <typename T1, typename T2, typename... Ts>
 union variadic_union<T1, T2, Ts...> {
@@ -110,33 +122,15 @@ union variadic_union<T1, T2, Ts...> {
   constexpr explicit variadic_union(V&& value) : tail_(std::forward<V>(value)) {}
 
   constexpr variadic_union(variadic_union<T1, T2, Ts...>&& other, std::size_t index) {
-    move(*this, std::forward<variadic_union<T1, T2, Ts...>>(other), index);
+    detail::move(*this, std::forward<variadic_union<T1, T2, Ts...>>(other), index);
   }
 
   constexpr variadic_union(const variadic_union<T1, T2, Ts...>& other, std::size_t index) {
-    copy(*this, other, index);
+    detail::copy(*this, other, index);
   }
 
   constexpr ~variadic_union() {}
 };
-
-template <typename T1, typename T2, typename... Ts>
-constexpr void move(variadic_union<T1, T2, Ts...>& target, variadic_union<T1, T2, Ts...>&& source, std::size_t index) {
-  if (index == 0) {
-    target.head_ = std::forward<T1>(source.head_);
-  } else {
-    move(target.tail_, std::forward<variadic_union<T2, Ts...>>(source.tail_), index - 1);
-  }
-}
-
-template <typename T1, typename T2, typename... Ts>
-constexpr void copy(variadic_union<T1, T2, Ts...>& target, const variadic_union<T1, T2, Ts...>& source, std::size_t index) {
-  if (index == 0) {
-    target.head_ = source.head_;
-  } else {
-    copy(target.tail_, source.tail_, index - 1);
-  }
-}
 
 template <typename T1, typename T2, typename... Ts>
 constexpr void destroy(variadic_union<T1, T2, Ts...>& u, std::size_t index) {
