@@ -40,7 +40,7 @@ template <typename E, typename... Ts, std::enable_if_t<contains_v<E, Ts...>, int
 constexpr E& get(variadic_union<Ts...>& u);
 
 /// Forwarding element assignment.
-template <typename E, typename... Ts, std::enable_if_t<contains_v<E, Ts...>, int> = 0>
+template <typename E, typename... Ts, std::enable_if_t<contains_v<std::remove_cvref_t<E>, Ts...>, int> = 0>
 constexpr void set(variadic_union<Ts...>& u, E&& element);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -143,27 +143,27 @@ constexpr void destroy(variadic_union<T1, T2, Ts...>& u, std::size_t index) {
 //////////////////////////////////////////////// SHARED IMPLEMENTATION /////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template <typename E, typename T, typename... Ts, std::enable_if_t<contains_v<E, T, Ts...>, int> = 0>
-constexpr const E& get(const variadic_union<T, Ts...>& u) {
-  if constexpr (std::is_same_v<E, T>) {
+template <typename E, typename... Ts, std::enable_if_t<contains_v<E, Ts...>, int> = 0>
+constexpr const E& get(const variadic_union<Ts...>& u) {
+  if constexpr (std::is_same_v<E, nth_t<0, Ts...>>) {
     return u.head_;
   } else {
     return get<E>(u.tail_);
   }
 }
 
-template <typename E, typename T, typename... Ts, std::enable_if_t<contains_v<E, T, Ts...>, int> = 0>
-constexpr E& get(variadic_union<T, Ts...>& u) {
-  if constexpr (std::is_same_v<E, T>) {
+template <typename E, typename... Ts, std::enable_if_t<contains_v<E, Ts...>, int> = 0>
+constexpr E& get(variadic_union<Ts...>& u) {
+  if constexpr (std::is_same_v<E, nth_t<0, Ts...>>) {
     return u.head_;
   } else {
     return get<E>(u.tail_);
   }
 }
 
-template <typename E, typename T, typename... Ts, std::enable_if_t<contains_v<std::remove_cvref_t<E>, T, Ts...>, int> = 0>
-constexpr void set(variadic_union<T, Ts...>& u, E&& element) {
-  if constexpr (std::is_same_v<std::remove_cvref_t<E>, T>) {
+template <typename E, typename... Ts, std::enable_if_t<contains_v<std::remove_cvref_t<E>, Ts...>, int> = 0>
+constexpr void set(variadic_union<Ts...>& u, E&& element) {
+  if constexpr (std::is_same_v<std::remove_cvref_t<E>, nth_t<0, Ts...>>) {
     u.head_ = std::forward<E>(element);
   } else {
     set<E>(u.tail_, std::forward<E>(element));
