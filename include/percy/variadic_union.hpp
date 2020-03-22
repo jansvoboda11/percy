@@ -10,35 +10,38 @@ namespace percy {
 /////////////////////////////////////////////// VARIADIC_UNION INTERFACE ///////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/// Type-generic variadic union.
 template <typename... Ts>
 union variadic_union {
-  template <typename T, std::enable_if_t<contains_v<T, Ts...>, int> = 0>
-  constexpr explicit variadic_union(const T& value);
+  /// Forwarding element constructor.
+  template <typename E, std::enable_if_t<contains_v<std::remove_cvref_t<E>, Ts...>, int> = 0>
+  constexpr explicit variadic_union(E&& element);
 
-  template <typename T, std::enable_if_t<contains_v<T, Ts...>, int> = 0>
-  constexpr explicit variadic_union(T&& value);
+  /// Move constructor.
+  constexpr variadic_union(variadic_union&& other, std::size_t index);
 
-  constexpr variadic_union(variadic_union<Ts...>&& other, std::size_t index);
+  /// Copy constructor.
+  constexpr variadic_union(const variadic_union& other, std::size_t index);
 
-  constexpr variadic_union(const variadic_union<Ts...>& other, std::size_t index);
-
+  /// Destructor. Does nothing, see `destroy` instead.
   constexpr ~variadic_union();
 };
 
+/// The actual destructor. Must be called manually with the index of the currently active element.
 template <typename... Ts>
 constexpr void destroy(std::size_t index);
 
-template <typename U, typename... Ts, std::enable_if_t<contains_v<U, Ts...>, int> = 0>
-constexpr const U& get(const variadic_union<Ts...>& u);
+/// Type-based element accessor.
+template <typename E, typename... Ts, std::enable_if_t<contains_v<E, Ts...>, int> = 0>
+constexpr const E& get(const variadic_union<Ts...>& u);
 
-template <typename U, typename... Ts, std::enable_if_t<contains_v<U, Ts...>, int> = 0>
-constexpr U& get(variadic_union<Ts...>& u);
+/// Type-based element accessor.
+template <typename E, typename... Ts, std::enable_if_t<contains_v<E, Ts...>, int> = 0>
+constexpr E& get(variadic_union<Ts...>& u);
 
-template <typename U, typename... Ts, std::enable_if_t<contains_v<U, Ts...>, int> = 0>
-constexpr void set(variadic_union<Ts...>& u, U&& value);
-
-template <typename U, typename... Ts, std::enable_if_t<contains_v<U, Ts...>, int> = 0>
-constexpr void set(variadic_union<Ts...>& u, const U& value);
+/// Forwarding element assignment.
+template <typename E, typename... Ts, std::enable_if_t<contains_v<E, Ts...>, int> = 0>
+constexpr void set(variadic_union<Ts...>& u, E&& element);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////// SINGLE ELEMENT IMPLEMENTATION /////////////////////////////////////////////
@@ -47,7 +50,7 @@ constexpr void set(variadic_union<Ts...>& u, const U& value);
 namespace detail {
 template <typename T>
 constexpr void move(variadic_union<T>& dst, variadic_union<T>&& src, std::size_t index) {
-  dst.head_ = std::forward<T>(src.head_);
+  dst.head_ = std::move(src.head_);
 }
 
 template <typename T>
@@ -60,15 +63,14 @@ template <typename T>
 union variadic_union<T> {
   T head_;
 
-  constexpr explicit variadic_union(const T& value) : head_(value) {}
+  template <typename E, std::enable_if_t<std::is_same_v<std::remove_cvref_t<E>, T>, int> = 0>
+  constexpr explicit variadic_union(E&& element) : head_(std::forward<E>(element)) {}
 
-  constexpr explicit variadic_union(T&& value) : head_(std::forward<T>(value)) {}
-
-  constexpr variadic_union(variadic_union<T>&& other, std::size_t index) {
-    detail::move(*this, std::forward<variadic_union<T>>(other), index);
+  constexpr variadic_union(variadic_union&& other, std::size_t index) {
+    detail::move(*this, std::move(other), index);
   }
 
-  constexpr variadic_union(const variadic_union<T>& other, std::size_t index) {
+  constexpr variadic_union(const variadic_union& other, std::size_t index) {
     detail::copy(*this, other, index);
   }
 
@@ -88,9 +90,9 @@ namespace detail {
 template <typename T1, typename T2, typename... Ts>
 constexpr void move(variadic_union<T1, T2, Ts...>& dst, variadic_union<T1, T2, Ts...>&& src, std::size_t index) {
   if (index == 0) {
-    dst.head_ = std::forward<T1>(src.head_);
+    dst.head_ = std::move(src.head_);
   } else {
-    move(dst.tail_, std::forward<variadic_union<T2, Ts...>>(src.tail_), index - 1);
+    move(dst.tail_, std::move(src.tail_), index - 1);
   }
 }
 
@@ -111,21 +113,17 @@ union variadic_union<T1, T2, Ts...> {
   T1 head_;
   variadic_union<T2, Ts...> tail_;
 
-  constexpr explicit variadic_union(const T1& value) : head_(value) {}
+  template <typename E, std::enable_if_t<std::is_same_v<std::remove_cvref_t<E>, T1>, int> = 0>
+  constexpr explicit variadic_union(E&& element) : head_(std::forward<E>(element)) {}
 
-  constexpr explicit variadic_union(T1&& value) : head_(std::forward<T1>(value)) {}
+  template <typename E, std::enable_if_t<contains_v<std::remove_cvref_t<E>, T2, Ts...>, int> = 0>
+  constexpr explicit variadic_union(E&& element) : tail_(std::forward<E>(element)) {}
 
-  template <typename V, std::enable_if_t<contains_v<V, T2, Ts...>, int> = 0>
-  constexpr explicit variadic_union(const V& value) : tail_(value) {}
-
-  template <typename V, std::enable_if_t<contains_v<V, T2, Ts...>, int> = 0>
-  constexpr explicit variadic_union(V&& value) : tail_(std::forward<V>(value)) {}
-
-  constexpr variadic_union(variadic_union<T1, T2, Ts...>&& other, std::size_t index) {
-    detail::move(*this, std::forward<variadic_union<T1, T2, Ts...>>(other), index);
+  constexpr variadic_union(variadic_union&& other, std::size_t index) {
+    detail::move(*this, std::move(other), index);
   }
 
-  constexpr variadic_union(const variadic_union<T1, T2, Ts...>& other, std::size_t index) {
+  constexpr variadic_union(const variadic_union& other, std::size_t index) {
     detail::copy(*this, other, index);
   }
 
@@ -145,39 +143,30 @@ constexpr void destroy(variadic_union<T1, T2, Ts...>& u, std::size_t index) {
 //////////////////////////////////////////////// SHARED IMPLEMENTATION /////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template <typename U, typename T, typename... Ts, std::enable_if_t<contains_v<U, T, Ts...>, int> = 0>
-constexpr const U& get(const variadic_union<T, Ts...>& u) {
-  if constexpr (std::is_same_v<U, T>) {
+template <typename E, typename T, typename... Ts, std::enable_if_t<contains_v<E, T, Ts...>, int> = 0>
+constexpr const E& get(const variadic_union<T, Ts...>& u) {
+  if constexpr (std::is_same_v<E, T>) {
     return u.head_;
   } else {
-    return get<U>(u.tail_);
+    return get<E>(u.tail_);
   }
 }
 
-template <typename U, typename T, typename... Ts, std::enable_if_t<contains_v<U, T, Ts...>, int> = 0>
-constexpr U& get(variadic_union<T, Ts...>& u) {
-  if constexpr (std::is_same_v<U, T>) {
+template <typename E, typename T, typename... Ts, std::enable_if_t<contains_v<E, T, Ts...>, int> = 0>
+constexpr E& get(variadic_union<T, Ts...>& u) {
+  if constexpr (std::is_same_v<E, T>) {
     return u.head_;
   } else {
-    return get<U>(u.tail_);
+    return get<E>(u.tail_);
   }
 }
 
-template <typename U, typename T, typename... Ts, std::enable_if_t<contains_v<U, T, Ts...>, int> = 0>
-constexpr void set(variadic_union<T, Ts...>& u, U&& value) {
-  if constexpr (std::is_same_v<U, T>) {
-    u.head_ = std::forward<U>(value);
+template <typename E, typename T, typename... Ts, std::enable_if_t<contains_v<std::remove_cvref_t<E>, T, Ts...>, int> = 0>
+constexpr void set(variadic_union<T, Ts...>& u, E&& element) {
+  if constexpr (std::is_same_v<std::remove_cvref_t<E>, T>) {
+    u.head_ = std::forward<E>(element);
   } else {
-    set<U>(u.tail_, std::forward<U>(value));
-  }
-}
-
-template <typename U, typename T, typename... Ts, std::enable_if_t<contains_v<U, T, Ts...>, int> = 0>
-constexpr void set(variadic_union<T, Ts...>& u, const U& value) {
-  if constexpr (std::is_same_v<U, T>) {
-    u.head_ = value;
-  } else {
-    set<U>(u.tail_, value);
+    set<E>(u.tail_, std::forward<E>(element));
   }
 }
 } // namespace percy

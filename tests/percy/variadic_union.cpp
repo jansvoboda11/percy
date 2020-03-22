@@ -220,287 +220,335 @@ constexpr auto analyze_lifetimes(Function&& function) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly.", "[variadic_union]") {
-  SECTION("The only element.") {
-    constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
-      lifetime element(&summary);
+  SECTION("Element move constructor.") {
+    SECTION("With the only element.") {
+      constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
+        lifetime element(&summary);
 
-      percy::variadic_union<lifetime> union_0(std::move(element));
-      percy::destroy(union_0, 0);
-    });
+        percy::variadic_union<lifetime> union_0(std::move(element));
+        percy::destroy(union_0, 0);
+      });
 
-    // 1. move: local variable -> union constructor -> union value
-    // 2. destroy: local variable
-    // 2. destroy: union value
-    STATIC_REQUIRE(summary.move_count == 1);
-    STATIC_REQUIRE(summary.copy_count == 0);
-    STATIC_REQUIRE(summary.destroy_count == 2);
+      // 1. move: local variable -> union constructor -> union value
+      // 2. destroy: local variable
+      // 2. destroy: union value
+      STATIC_REQUIRE(summary.move_count == 1);
+      STATIC_REQUIRE(summary.copy_count == 0);
+      STATIC_REQUIRE(summary.destroy_count == 2);
+    }
+
+    SECTION("With the first of more elements.") {
+      constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
+        lifetime element(&summary);
+
+        percy::variadic_union<lifetime, int> union_0(std::move(element));
+        percy::destroy(union_0, 0);
+      });
+
+      // same logic as above
+      STATIC_REQUIRE(summary.move_count == 1);
+      STATIC_REQUIRE(summary.copy_count == 0);
+      STATIC_REQUIRE(summary.destroy_count == 2);
+    }
+
+    SECTION("With the second of more elements.") {
+      constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
+        lifetime element(&summary);
+
+        percy::variadic_union<int, lifetime> union_0(std::move(element));
+        percy::destroy(union_0, 1);
+      });
+
+      // same logic as above
+      STATIC_REQUIRE(summary.move_count == 1);
+      STATIC_REQUIRE(summary.copy_count == 0);
+      STATIC_REQUIRE(summary.destroy_count == 2);
+    }
   }
 
-  SECTION("The first of more elements.") {
-    constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
-      lifetime element(&summary);
+  SECTION("Element copy constructor.") {
+    SECTION("With the only element.") {
+      constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
+        lifetime element(&summary);
 
-      percy::variadic_union<lifetime, int> union_0(std::move(element));
-      percy::destroy(union_0, 0);
-    });
+        percy::variadic_union<lifetime> union_0(element);
+        percy::destroy(union_0, 0);
+      });
 
-    // same logic as above
-    STATIC_REQUIRE(summary.move_count == 1);
-    STATIC_REQUIRE(summary.copy_count == 0);
-    STATIC_REQUIRE(summary.destroy_count == 2);
+      // 1. copy: local variable -> union constructor -> union value
+      // 2. destroy: local variable
+      // 2. destroy: union value
+      STATIC_REQUIRE(summary.move_count == 0);
+      STATIC_REQUIRE(summary.copy_count == 1);
+      STATIC_REQUIRE(summary.destroy_count == 2);
+    }
+
+    SECTION("With the first of more elements.") {
+      constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
+        lifetime element(&summary);
+
+        percy::variadic_union<lifetime, int> union_0(element);
+        percy::destroy(union_0, 0);
+      });
+
+      // same logic as above
+      STATIC_REQUIRE(summary.move_count == 0);
+      STATIC_REQUIRE(summary.copy_count == 1);
+      STATIC_REQUIRE(summary.destroy_count == 2);
+    }
+
+    SECTION("With the second of more elements.") {
+      constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
+        lifetime element(&summary);
+
+        percy::variadic_union<int, lifetime> union_0(element);
+        percy::destroy(union_0, 1);
+      });
+
+      // same logic as above
+      STATIC_REQUIRE(summary.move_count == 0);
+      STATIC_REQUIRE(summary.copy_count == 1);
+      STATIC_REQUIRE(summary.destroy_count == 2);
+    }
   }
 
-  SECTION("The second of more elements.", "[variadic_union]") {
-    constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
-      lifetime element(&summary);
+  SECTION("Move constructor.") {
+    SECTION("With the only element.") {
+      constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
+        lifetime element(&summary);
 
-      percy::variadic_union<int, lifetime> union_0(std::move(element));
-      percy::destroy(union_0, 1);
-    });
+        percy::variadic_union<lifetime> original(std::move(element));
+        percy::variadic_union<lifetime> moved(std::move(original), 0);
+        percy::destroy(moved, 0);
+      });
 
-    // same logic as above
-    STATIC_REQUIRE(summary.move_count == 1);
-    STATIC_REQUIRE(summary.copy_count == 0);
-    STATIC_REQUIRE(summary.destroy_count == 2);
-  }
-}
+      // 1. move: local variable -> union constructor -> `original` union value
+      // 2. move: `original` union value -> move -> `moved` union value
+      // 3. destroy: local variable
+      // 4. destroy: `moved` union value
+      STATIC_REQUIRE(summary.move_count == 2);
+      STATIC_REQUIRE(summary.copy_count == 0);
+      STATIC_REQUIRE(summary.destroy_count == 2);
+    }
 
-TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly during move operations.", "[variadic_union]") {
-  SECTION("The only element.") {
-    constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
-      lifetime element(&summary);
+    SECTION("With the first of many elements.") {
+      constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
+        lifetime element(&summary);
 
-      percy::variadic_union<lifetime> original(std::move(element));
-      percy::variadic_union<lifetime> moved(std::move(original), 0);
-      percy::destroy(moved, 0);
-    });
+        percy::variadic_union<lifetime, int> original(std::move(element));
+        percy::variadic_union<lifetime, int> moved(std::move(original), 0);
+        percy::destroy(moved, 0);
+      });
 
-    // 1. move: local variable -> union constructor -> `original` union value
-    // 2. move: `original` union value -> move -> `moved` union value
-    // 3. destroy: local variable
-    // 4. destroy: `moved` union value
-    STATIC_REQUIRE(summary.move_count == 2);
-    STATIC_REQUIRE(summary.copy_count == 0);
-    STATIC_REQUIRE(summary.destroy_count == 2);
-  }
+      // same logic as above
+      STATIC_REQUIRE(summary.move_count == 2);
+      STATIC_REQUIRE(summary.copy_count == 0);
+      STATIC_REQUIRE(summary.destroy_count == 2);
+    }
 
-  SECTION("The first of many elements.") {
-    constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
-      lifetime element(&summary);
+    SECTION("With the second of many elements.") {
+      constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
+        lifetime element(&summary);
 
-      percy::variadic_union<lifetime, int> original(std::move(element));
-      percy::variadic_union<lifetime, int> moved(std::move(original), 0);
-      percy::destroy(moved, 0);
-    });
+        percy::variadic_union<int, lifetime> original(std::move(element));
+        percy::variadic_union<int, lifetime> moved(std::move(original), 1);
+        percy::destroy(moved, 1);
+      });
 
-    // same logic as above
-    STATIC_REQUIRE(summary.move_count == 2);
-    STATIC_REQUIRE(summary.copy_count == 0);
-    STATIC_REQUIRE(summary.destroy_count == 2);
-  }
-
-  SECTION("The second of many elements.") {
-    constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
-      lifetime element(&summary);
-
-      percy::variadic_union<int, lifetime> original(std::move(element));
-      percy::variadic_union<int, lifetime> moved(std::move(original), 1);
-      percy::destroy(moved, 1);
-    });
-
-    // same logic as above
-    STATIC_REQUIRE(summary.move_count == 2);
-    STATIC_REQUIRE(summary.copy_count == 0);
-    STATIC_REQUIRE(summary.destroy_count == 2);
-  }
-}
-
-TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly during copy operations.", "[variadic_union]") {
-  SECTION("The only element.") {
-    constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
-      lifetime element(&summary);
-
-      percy::variadic_union<lifetime> original(std::move(element));
-      percy::variadic_union<lifetime> copy(original, 0);
-      percy::destroy(copy, 0);
-      percy::destroy(original, 0);
-    });
-
-    // 1. move: local variable -> union constructor -> `original` union value
-    // 2. copy: `original` union value -> copy -> `copy` union value
-    // 3. destroy: local variable
-    // 4. destroy: `copy` union value
-    // 5. destroy: `original` union value
-    REQUIRE(summary.move_count == 1);
-    REQUIRE(summary.copy_count == 1);
-    REQUIRE(summary.destroy_count == 3);
+      // same logic as above
+      STATIC_REQUIRE(summary.move_count == 2);
+      STATIC_REQUIRE(summary.copy_count == 0);
+      STATIC_REQUIRE(summary.destroy_count == 2);
+    }
   }
 
-  SECTION("The first of more elements.") {
-    constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
-      lifetime element(&summary);
+  SECTION("Copy constructor.") {
+    SECTION("With the only element.") {
+      constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
+        lifetime element(&summary);
 
-      percy::variadic_union<lifetime, int> original(std::move(element));
-      percy::variadic_union<lifetime, int> copy(original, 0);
-      percy::destroy(copy, 0);
-      percy::destroy(original, 0);
-    });
+        percy::variadic_union<lifetime> original(std::move(element));
+        percy::variadic_union<lifetime> copy(original, 0);
+        percy::destroy(copy, 0);
+        percy::destroy(original, 0);
+      });
 
-    // same logic as above
-    STATIC_REQUIRE(summary.move_count == 1);
-    STATIC_REQUIRE(summary.copy_count == 1);
-    STATIC_REQUIRE(summary.destroy_count == 3);
+      // 1. move: local variable -> union constructor -> `original` union value
+      // 2. copy: `original` union value -> copy -> `copy` union value
+      // 3. destroy: local variable
+      // 4. destroy: `copy` union value
+      // 5. destroy: `original` union value
+      REQUIRE(summary.move_count == 1);
+      REQUIRE(summary.copy_count == 1);
+      REQUIRE(summary.destroy_count == 3);
+    }
+
+    SECTION("With the first of more elements.") {
+      constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
+        lifetime element(&summary);
+
+        percy::variadic_union<lifetime, int> original(std::move(element));
+        percy::variadic_union<lifetime, int> copy(original, 0);
+        percy::destroy(copy, 0);
+        percy::destroy(original, 0);
+      });
+
+      // same logic as above
+      STATIC_REQUIRE(summary.move_count == 1);
+      STATIC_REQUIRE(summary.copy_count == 1);
+      STATIC_REQUIRE(summary.destroy_count == 3);
+    }
+
+    SECTION("With the second of more elements.") {
+      constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
+        lifetime element(&summary);
+
+        percy::variadic_union<int, lifetime> original(std::move(element));
+        percy::variadic_union<int, lifetime> copy(original, 1);
+        percy::destroy(copy, 1);
+        percy::destroy(original, 1);
+      });
+
+      // same logic as above
+      STATIC_REQUIRE(summary.move_count == 1);
+      STATIC_REQUIRE(summary.copy_count == 1);
+      STATIC_REQUIRE(summary.destroy_count == 3);
+    }
   }
 
-  SECTION("The second of more elements.") {
-    constexpr auto summary = analyze_lifetime([](lifetime_summary& summary) {
-      lifetime element(&summary);
+  SECTION("Move set.") {
+    SECTION("With the only element.") {
+      constexpr auto summaries = analyze_lifetimes([](lifetime_summary& summary_1, lifetime_summary& summary_2) {
+        lifetime element(&summary_1);
+        lifetime replacement(&summary_2);
 
-      percy::variadic_union<int, lifetime> original(std::move(element));
-      percy::variadic_union<int, lifetime> copy(original, 1);
-      percy::destroy(copy, 1);
-      percy::destroy(original, 1);
-    });
+        percy::variadic_union<lifetime> union_0(std::move(element));
+        percy::set(union_0, std::move(replacement));
+        percy::destroy(union_0, 0);
+      });
 
-    // same logic as above
-    STATIC_REQUIRE(summary.move_count == 1);
-    STATIC_REQUIRE(summary.copy_count == 1);
-    STATIC_REQUIRE(summary.destroy_count == 3);
-  }
-}
+      // 1. move: local variable -> union constructor -> union value
+      // 2. destroy: local variable
+      STATIC_REQUIRE(summaries.first.move_count == 1);
+      STATIC_REQUIRE(summaries.first.copy_count == 0);
+      STATIC_REQUIRE(summaries.first.destroy_count == 1); // the value is not destroyed automatically!
 
-TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly during move set calls.", "[variadic_union]") {
-  SECTION("The only element.") {
-    constexpr auto summaries = analyze_lifetimes([](lifetime_summary& summary_1, lifetime_summary& summary_2) {
-      lifetime element(&summary_1);
-      lifetime replacement(&summary_2);
+      // 3. move: local variable -> set -> union value
+      // 4. destroy: local variable
+      // 5. destroy: union value
+      STATIC_REQUIRE(summaries.second.move_count == 1);
+      STATIC_REQUIRE(summaries.second.copy_count == 0);
+      STATIC_REQUIRE(summaries.second.destroy_count == 2);
+    }
 
-      percy::variadic_union<lifetime> union_0(std::move(element));
-      percy::set(union_0, std::move(replacement));
-      percy::destroy(union_0, 0);
-    });
+    SECTION("With the first of more elements.") {
+      constexpr auto summaries = analyze_lifetimes([](lifetime_summary& summary_1, lifetime_summary& summary_2) {
+        lifetime element(&summary_1);
+        lifetime replacement(&summary_2);
 
-    // 1. move: local variable -> union constructor -> union value
-    // 2. destroy: local variable
-    STATIC_REQUIRE(summaries.first.move_count == 1);
-    STATIC_REQUIRE(summaries.first.copy_count == 0);
-    STATIC_REQUIRE(summaries.first.destroy_count == 1); // the value is not destroyed automatically!
+        percy::variadic_union<lifetime, int> union_0(std::move(element));
+        percy::set(union_0, std::move(replacement));
+        percy::destroy(union_0, 0);
+      });
 
-    // 3. move: local variable -> set -> union value
-    // 4. destroy: local variable
-    // 5. destroy: union value
-    STATIC_REQUIRE(summaries.second.move_count == 1);
-    STATIC_REQUIRE(summaries.second.copy_count == 0);
-    STATIC_REQUIRE(summaries.second.destroy_count == 2);
-  }
+      // same logic as above
+      STATIC_REQUIRE(summaries.first.move_count == 1);
+      STATIC_REQUIRE(summaries.first.copy_count == 0);
+      STATIC_REQUIRE(summaries.first.destroy_count == 1);
 
-  SECTION("The first of more elements.") {
-    constexpr auto summaries = analyze_lifetimes([](lifetime_summary& summary_1, lifetime_summary& summary_2) {
-      lifetime element(&summary_1);
-      lifetime replacement(&summary_2);
+      // same logic as above
+      STATIC_REQUIRE(summaries.second.move_count == 1);
+      STATIC_REQUIRE(summaries.second.copy_count == 0);
+      STATIC_REQUIRE(summaries.second.destroy_count == 2);
+    }
 
-      percy::variadic_union<lifetime, int> union_0(std::move(element));
-      percy::set(union_0, std::move(replacement));
-      percy::destroy(union_0, 0);
-    });
+    SECTION("With the second of more elements.") {
+      constexpr auto summaries = analyze_lifetimes([](lifetime_summary& summary_1, lifetime_summary& summary_2) {
+        lifetime element(&summary_1);
+        lifetime replacement(&summary_2);
 
-    // same logic as above
-    STATIC_REQUIRE(summaries.first.move_count == 1);
-    STATIC_REQUIRE(summaries.first.copy_count == 0);
-    STATIC_REQUIRE(summaries.first.destroy_count == 1);
+        percy::variadic_union<int, lifetime> union_0(std::move(element));
+        percy::set(union_0, std::move(replacement));
+        percy::destroy(union_0, 1);
+      });
 
-    // same logic as above
-    STATIC_REQUIRE(summaries.second.move_count == 1);
-    STATIC_REQUIRE(summaries.second.copy_count == 0);
-    STATIC_REQUIRE(summaries.second.destroy_count == 2);
-  }
+      // same logic as above
+      STATIC_REQUIRE(summaries.first.move_count == 1);
+      STATIC_REQUIRE(summaries.first.copy_count == 0);
+      STATIC_REQUIRE(summaries.first.destroy_count == 1);
 
-  SECTION("The second of more elements.") {
-    constexpr auto summaries = analyze_lifetimes([](lifetime_summary& summary_1, lifetime_summary& summary_2) {
-      lifetime element(&summary_1);
-      lifetime replacement(&summary_2);
-
-      percy::variadic_union<int, lifetime> union_0(std::move(element));
-      percy::set(union_0, std::move(replacement));
-      percy::destroy(union_0, 1);
-    });
-
-    // same logic as above
-    STATIC_REQUIRE(summaries.first.move_count == 1);
-    STATIC_REQUIRE(summaries.first.copy_count == 0);
-    STATIC_REQUIRE(summaries.first.destroy_count == 1);
-
-    // same logic as above
-    STATIC_REQUIRE(summaries.second.move_count == 1);
-    STATIC_REQUIRE(summaries.second.copy_count == 0);
-    STATIC_REQUIRE(summaries.second.destroy_count == 2);
-  }
-}
-
-TEST_CASE("Lifetimes of `variadic_union` elements are managed correctly during copy set calls.", "[variadic_union]") {
-  SECTION("The only element.") {
-    constexpr auto summaries = analyze_lifetimes([](lifetime_summary& summary_1, lifetime_summary& summary_2) {
-      lifetime element(&summary_1);
-      lifetime replacement(&summary_2);
-
-      percy::variadic_union<lifetime> union_0(std::move(element));
-      percy::set(union_0, replacement);
-      percy::destroy(union_0, 0);
-    });
-
-    // 1. move: local variable -> union constructor -> union value
-    // 2. destroy: local variable
-    STATIC_REQUIRE(summaries.first.move_count == 1);
-    STATIC_REQUIRE(summaries.first.copy_count == 0);
-    STATIC_REQUIRE(summaries.first.destroy_count == 1); // the value is not destroyed automatically!
-
-    // 3. copy: local variable -> set -> union value
-    // 4. destroy: local variable
-    // 5. destroy: union value
-    STATIC_REQUIRE(summaries.second.move_count == 0);
-    STATIC_REQUIRE(summaries.second.copy_count == 1);
-    STATIC_REQUIRE(summaries.second.destroy_count == 2);
+      // same logic as above
+      STATIC_REQUIRE(summaries.second.move_count == 1);
+      STATIC_REQUIRE(summaries.second.copy_count == 0);
+      STATIC_REQUIRE(summaries.second.destroy_count == 2);
+    }
   }
 
-  SECTION("The first of more elements.") {
-    constexpr auto summaries = analyze_lifetimes([](lifetime_summary& summary_1, lifetime_summary& summary_2) {
-      lifetime element(&summary_1);
-      lifetime replacement(&summary_2);
+  SECTION("Copy set.") {
+    SECTION("With the only element.") {
+      constexpr auto summaries = analyze_lifetimes([](lifetime_summary& summary_1, lifetime_summary& summary_2) {
+        lifetime element(&summary_1);
+        lifetime replacement(&summary_2);
 
-      percy::variadic_union<lifetime, int> union_0(std::move(element));
-      percy::set(union_0, replacement);
-      percy::destroy(union_0, 0);
-    });
+        percy::variadic_union<lifetime> union_0(std::move(element));
+        percy::set(union_0, replacement);
+        percy::destroy(union_0, 0);
+      });
 
-    // same logic as above
-    STATIC_REQUIRE(summaries.first.move_count == 1);
-    STATIC_REQUIRE(summaries.first.copy_count == 0);
-    STATIC_REQUIRE(summaries.first.destroy_count == 1);
+      // 1. move: local variable -> union constructor -> union value
+      // 2. destroy: local variable
+      STATIC_REQUIRE(summaries.first.move_count == 1);
+      STATIC_REQUIRE(summaries.first.copy_count == 0);
+      STATIC_REQUIRE(summaries.first.destroy_count == 1); // the value is not destroyed automatically!
 
-    // same logic as above
-    STATIC_REQUIRE(summaries.second.move_count == 0);
-    STATIC_REQUIRE(summaries.second.copy_count == 1);
-    STATIC_REQUIRE(summaries.second.destroy_count == 2);
-  }
+      // 3. copy: local variable -> set -> union value
+      // 4. destroy: local variable
+      // 5. destroy: union value
+      STATIC_REQUIRE(summaries.second.move_count == 0);
+      STATIC_REQUIRE(summaries.second.copy_count == 1);
+      STATIC_REQUIRE(summaries.second.destroy_count == 2);
+    }
 
-  SECTION("The second of more elements.") {
-    constexpr auto summaries = analyze_lifetimes([](lifetime_summary& summary_1, lifetime_summary& summary_2) {
-      lifetime element(&summary_1);
-      lifetime replacement(&summary_2);
+    SECTION("With the first of more elements.") {
+      constexpr auto summaries = analyze_lifetimes([](lifetime_summary& summary_1, lifetime_summary& summary_2) {
+        lifetime element(&summary_1);
+        lifetime replacement(&summary_2);
 
-      percy::variadic_union<int, lifetime> union_0(std::move(element));
-      percy::set(union_0, replacement);
-      percy::destroy(union_0, 1);
-    });
+        percy::variadic_union<lifetime, int> union_0(std::move(element));
+        percy::set(union_0, replacement);
+        percy::destroy(union_0, 0);
+      });
 
-    // same logic as above
-    STATIC_REQUIRE(summaries.first.move_count == 1);
-    STATIC_REQUIRE(summaries.first.copy_count == 0);
-    STATIC_REQUIRE(summaries.first.destroy_count == 1);
+      // same logic as above
+      STATIC_REQUIRE(summaries.first.move_count == 1);
+      STATIC_REQUIRE(summaries.first.copy_count == 0);
+      STATIC_REQUIRE(summaries.first.destroy_count == 1);
 
-    // same logic as above
-    STATIC_REQUIRE(summaries.second.move_count == 0);
-    STATIC_REQUIRE(summaries.second.copy_count == 1);
-    STATIC_REQUIRE(summaries.second.destroy_count == 2);
+      // same logic as above
+      STATIC_REQUIRE(summaries.second.move_count == 0);
+      STATIC_REQUIRE(summaries.second.copy_count == 1);
+      STATIC_REQUIRE(summaries.second.destroy_count == 2);
+    }
+
+    SECTION("With the second of more elements.") {
+      constexpr auto summaries = analyze_lifetimes([](lifetime_summary& summary_1, lifetime_summary& summary_2) {
+        lifetime element(&summary_1);
+        lifetime replacement(&summary_2);
+
+        percy::variadic_union<int, lifetime> union_0(std::move(element));
+        percy::set(union_0, replacement);
+        percy::destroy(union_0, 1);
+      });
+
+      // same logic as above
+      STATIC_REQUIRE(summaries.first.move_count == 1);
+      STATIC_REQUIRE(summaries.first.copy_count == 0);
+      STATIC_REQUIRE(summaries.first.destroy_count == 1);
+
+      // same logic as above
+      STATIC_REQUIRE(summaries.second.move_count == 0);
+      STATIC_REQUIRE(summaries.second.copy_count == 1);
+      STATIC_REQUIRE(summaries.second.destroy_count == 2);
+    }
   }
 }
