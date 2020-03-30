@@ -1,13 +1,4 @@
-include(FetchContent)
-
-FetchContent_Declare(Catch2
-  GIT_REPOSITORY https://github.com/catchorg/Catch2
-  GIT_TAG v2.11.1
-)
-
-FetchContent_MakeAvailable(Catch2)
-
-include_directories(${percy_SOURCE_DIR}/include/ ${Catch2_SOURCE_DIR}/single_include/)
+include(${PROJECT_SOURCE_DIR}/cmake/Catch2.cmake)
 
 add_executable(test_all
   test_all.cpp
@@ -15,6 +6,10 @@ add_executable(test_all
   percy/result.cpp
   percy/static_input.cpp
   percy/type_traits.cpp
-  percy/variadic_union.cpp
-  percy/variant.cpp
 )
+
+target_link_libraries(test_all Percy Catch2::Catch2)
+
+if(${PERCY_RUNTIME_TESTS} STREQUAL ON)
+  add_definitions(-DRUNTIME_TESTS)
+endif()

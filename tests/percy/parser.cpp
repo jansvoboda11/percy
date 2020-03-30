@@ -1,3 +1,5 @@
+#include "testing.hpp"
+
 #include <catch2/catch.hpp>
 
 #include <percy/parser.hpp>
@@ -7,7 +9,7 @@
 TEST_CASE("Parser `end` succeeds on input end.", "[parser][end]") {
   using parser = percy::parser<percy::end>;
 
-  constexpr auto result = parser::parse(percy::static_input("abc").advanced_to(3));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("abc").advanced_to(3));
 
   STATIC_REQUIRE(result.is_success());
   STATIC_REQUIRE(result.begin() == 3);
@@ -17,7 +19,7 @@ TEST_CASE("Parser `end` succeeds on input end.", "[parser][end]") {
 TEST_CASE("Parser `end` fails in the middle of input.", "[parser][end]") {
   using parser = percy::parser<percy::end>;
 
-  constexpr auto result = parser::parse(percy::static_input("abc").advanced_to(1));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("abc").advanced_to(1));
 
   STATIC_REQUIRE(result.is_failure());
   STATIC_REQUIRE(result.begin() == 1);
@@ -27,7 +29,7 @@ TEST_CASE("Parser `end` fails in the middle of input.", "[parser][end]") {
 TEST_CASE("Parser `symbol` succeeds on matching character.", "[parser][symbol]") {
   using parser = percy::parser<percy::symbol<'a'>>;
 
-  constexpr auto result = parser::parse(percy::static_input("abc"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("abc"));
 
   STATIC_REQUIRE(result.is_success());
   STATIC_REQUIRE(result.begin() == 0);
@@ -38,7 +40,7 @@ TEST_CASE("Parser `symbol` succeeds on matching character.", "[parser][symbol]")
 TEST_CASE("Parser `symbol` fails on different character.", "[parser][symbol]") {
   using parser = percy::parser<percy::symbol<'x'>>;
 
-  constexpr auto result = parser::parse(percy::static_input("abc"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("abc"));
 
   STATIC_REQUIRE(result.is_failure());
   STATIC_REQUIRE(result.begin() == 0);
@@ -48,7 +50,7 @@ TEST_CASE("Parser `symbol` fails on different character.", "[parser][symbol]") {
 TEST_CASE("Parser `symbol` fails on input end.", "[parser][symbol]") {
   using parser = percy::parser<percy::symbol<'a'>>;
 
-  constexpr auto result = parser::parse(percy::static_input("abc").advanced_to(3));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("abc").advanced_to(3));
 
   STATIC_REQUIRE(result.is_failure());
   STATIC_REQUIRE(result.begin() == 3);
@@ -58,7 +60,7 @@ TEST_CASE("Parser `symbol` fails on input end.", "[parser][symbol]") {
 TEST_CASE("Parser `range` succeeds on the beginning character.", "[parser][range]") {
   using parser = percy::parser<percy::range<'b', 'd'>>;
 
-  constexpr auto result = parser::parse(percy::static_input("bcd"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("bcd"));
 
   STATIC_REQUIRE(result.is_success());
   STATIC_REQUIRE(result.begin() == 0);
@@ -69,7 +71,7 @@ TEST_CASE("Parser `range` succeeds on the beginning character.", "[parser][range
 TEST_CASE("Parser `range` succeeds on an included character.", "[parser][range]") {
   using parser = percy::parser<percy::range<'b', 'd'>>;
 
-  constexpr auto result = parser::parse(percy::static_input("cde"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("cde"));
 
   STATIC_REQUIRE(result.is_success());
   STATIC_REQUIRE(result.begin() == 0);
@@ -80,7 +82,7 @@ TEST_CASE("Parser `range` succeeds on an included character.", "[parser][range]"
 TEST_CASE("Parser `range` succeeds on the ending character.", "[parser][range]") {
   using parser = percy::parser<percy::range<'b', 'd'>>;
 
-  constexpr auto result = parser::parse(percy::static_input("def"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("def"));
 
   STATIC_REQUIRE(result.is_success());
   STATIC_REQUIRE(result.begin() == 0);
@@ -91,7 +93,7 @@ TEST_CASE("Parser `range` succeeds on the ending character.", "[parser][range]")
 TEST_CASE("Parser `range` fails on a lesser character.", "[parser][range]") {
   using parser = percy::parser<percy::range<'b', 'd'>>;
 
-  constexpr auto result = parser::parse(percy::static_input("abc"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("abc"));
 
   STATIC_REQUIRE(result.is_failure());
   STATIC_REQUIRE(result.begin() == 0);
@@ -101,7 +103,7 @@ TEST_CASE("Parser `range` fails on a lesser character.", "[parser][range]") {
 TEST_CASE("Parser `range` fails on a greater character.", "[parser][range]") {
   using parser = percy::parser<percy::range<'b', 'd'>>;
 
-  constexpr auto result = parser::parse(percy::static_input("efg"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("efg"));
 
   STATIC_REQUIRE(result.is_failure());
   STATIC_REQUIRE(result.begin() == 0);
@@ -115,7 +117,7 @@ struct ab {
 TEST_CASE("Parser `word` succeeds on matching string.", "[parser][word]") {
   using parser = percy::parser<percy::word<ab>>;
 
-  constexpr auto result = parser::parse(percy::static_input("abc"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("abc"));
 
   STATIC_REQUIRE(result.is_success());
   STATIC_REQUIRE(result.begin() == 0);
@@ -126,7 +128,7 @@ TEST_CASE("Parser `word` succeeds on matching string.", "[parser][word]") {
 TEST_CASE("Parser `word` fails on different string.", "[parser][word]") {
   using parser = percy::parser<percy::word<ab>>;
 
-  constexpr auto result = parser::parse(percy::static_input("axc"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("axc"));
 
   STATIC_REQUIRE(result.is_failure());
   STATIC_REQUIRE(result.begin() == 0);
@@ -136,7 +138,7 @@ TEST_CASE("Parser `word` fails on different string.", "[parser][word]") {
 TEST_CASE("Parser `word` fails on input end.", "[parser][word]") {
   using parser = percy::parser<percy::word<ab>>;
 
-  constexpr auto result = parser::parse(percy::static_input("a"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("a"));
 
   STATIC_REQUIRE(result.is_failure());
   STATIC_REQUIRE(result.begin() == 0);
@@ -146,7 +148,7 @@ TEST_CASE("Parser `word` fails on input end.", "[parser][word]") {
 TEST_CASE("Parser `sequence` succeeds when all rules match.", "[parser][sequence]") {
   using parser = percy::parser<percy::sequence<percy::symbol<'a'>, percy::symbol<'b'>>>;
 
-  constexpr auto result = parser::parse(percy::static_input("abc"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("abc"));
 
   STATIC_REQUIRE(result.is_success());
   STATIC_REQUIRE(result.begin() == 0);
@@ -157,7 +159,7 @@ TEST_CASE("Parser `sequence` succeeds when all rules match.", "[parser][sequence
 TEST_CASE("Parser `sequence` fails when first rule does not match.", "[parser][sequence]") {
   using parser = percy::parser<percy::sequence<percy::symbol<'x'>, percy::symbol<'b'>>>;
 
-  constexpr auto result = parser::parse(percy::static_input("abc"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("abc"));
 
   STATIC_REQUIRE(result.is_failure());
   STATIC_REQUIRE(result.begin() == 0);
@@ -167,7 +169,7 @@ TEST_CASE("Parser `sequence` fails when first rule does not match.", "[parser][s
 TEST_CASE("Parser `sequence` fails when following rule does not match.", "[parser][sequence]") {
   using parser = percy::parser<percy::sequence<percy::symbol<'a'>, percy::symbol<'x'>>>;
 
-  constexpr auto result = parser::parse(percy::static_input("abc"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("abc"));
 
   STATIC_REQUIRE(result.is_failure());
   STATIC_REQUIRE(result.begin() == 0);
@@ -177,7 +179,7 @@ TEST_CASE("Parser `sequence` fails when following rule does not match.", "[parse
 TEST_CASE("Parser `either` succeeds when first rule matches.", "[parser][either]") {
   using parser = percy::parser<percy::either<percy::symbol<'a'>, percy::symbol<'b'>>>;
 
-  constexpr auto result = parser::parse(percy::static_input("abc"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("abc"));
 
   STATIC_REQUIRE(result.is_success());
   STATIC_REQUIRE(result.begin() == 0);
@@ -188,7 +190,7 @@ TEST_CASE("Parser `either` succeeds when first rule matches.", "[parser][either]
 TEST_CASE("Parser `either` succeeds when alternative rule matches.", "[parser][either]") {
   using parser = percy::parser<percy::either<percy::symbol<'x'>, percy::symbol<'a'>>>;
 
-  constexpr auto result = parser::parse(percy::static_input("abc"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("abc"));
 
   STATIC_REQUIRE(result.is_success());
   STATIC_REQUIRE(result.begin() == 0);
@@ -199,7 +201,7 @@ TEST_CASE("Parser `either` succeeds when alternative rule matches.", "[parser][e
 TEST_CASE("Parser `either` fails when no rule matches.", "[parser][either]") {
   using parser = percy::parser<percy::either<percy::symbol<'x'>, percy::symbol<'x'>>>;
 
-  constexpr auto result = parser::parse(percy::static_input("abc"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("abc"));
 
   STATIC_REQUIRE(result.is_failure());
   STATIC_REQUIRE(result.begin() == 0);
@@ -213,29 +215,29 @@ struct abc {
 TEST_CASE("Parser `one_of` succeeds when first rule matches.", "[parser][one_of]") {
   using parser = percy::parser<percy::one_of<percy::word<abc>, percy::symbol<'x'>>>;
 
-  constexpr auto result = parser::parse(percy::static_input("abc"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("abc"));
 
   STATIC_REQUIRE(result.is_success());
   STATIC_REQUIRE(result.begin() == 0);
   STATIC_REQUIRE(result.end() == 3);
-  STATIC_REQUIRE(result.get() == std::variant<std::string_view, char>("abc"));
+  STATIC_REQUIRE(result.get() == percy::variant<std::string_view, char>("abc"));
 }
 
 TEST_CASE("Parser `one_of` succeeds when alternative rule matches.", "[parser][one_of]") {
   using parser = percy::parser<percy::one_of<percy::word<abc>, percy::symbol<'x'>>>;
 
-  constexpr auto result = parser::parse(percy::static_input("xyz"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("xyz"));
 
   STATIC_REQUIRE(result.is_success());
   STATIC_REQUIRE(result.begin() == 0);
   STATIC_REQUIRE(result.end() == 1);
-  STATIC_REQUIRE(result.get() == std::variant<std::string_view, char>('x'));
+  STATIC_REQUIRE(result.get() == percy::variant<std::string_view, char>('x'));
 }
 
 TEST_CASE("Parser `one_of` fails when no rule matches.", "[parser][one_of]") {
   using parser = percy::parser<percy::one_of<percy::symbol<'x'>, percy::word<abc>>>;
 
-  constexpr auto result = parser::parse(percy::static_input("ijk"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("ijk"));
 
   STATIC_REQUIRE(result.is_failure());
   STATIC_REQUIRE(result.begin() == 0);
@@ -245,7 +247,7 @@ TEST_CASE("Parser `one_of` fails when no rule matches.", "[parser][one_of]") {
 TEST_CASE("Parser `many` succeeds even when rule matches zero times.", "[parser][many]") {
   using parser = percy::parser<percy::many<percy::symbol<'x'>>>;
 
-  auto result = parser::parse(percy::static_input("abc"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("abc"));
 
   REQUIRE(result.is_success());
   REQUIRE(result.begin() == 0);
@@ -256,7 +258,7 @@ TEST_CASE("Parser `many` succeeds even when rule matches zero times.", "[parser]
 TEST_CASE("Parser `many` succeeds when rule matches multiple times.", "[parser][many]") {
   using parser = percy::parser<percy::many<percy::symbol<'a'>>>;
 
-  auto result = parser::parse(percy::static_input("aac"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("aac"));
 
   REQUIRE(result.is_success());
   REQUIRE(result.begin() == 0);
@@ -267,7 +269,7 @@ TEST_CASE("Parser `many` succeeds when rule matches multiple times.", "[parser][
 TEST_CASE("Parser `many` stops at the input end.", "[parser][many]") {
   using parser = percy::parser<percy::many<percy::symbol<'a'>>>;
 
-  auto result = parser::parse(percy::static_input("aaa"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("aaa"));
 
   REQUIRE(result.is_success());
   REQUIRE(result.begin() == 0);
@@ -285,7 +287,7 @@ struct left_curly {
 TEST_CASE("Parser of custom rule succeeds when the inner rule matches.", "[parser][custom]") {
   using parser = percy::parser<left_curly>;
 
-  constexpr auto result = parser::parse(percy::static_input("{"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("{"));
 
   STATIC_REQUIRE(result.is_success());
   STATIC_REQUIRE(result.begin() == 0);
@@ -304,7 +306,7 @@ struct right_curly {
 TEST_CASE("Parser of custom rule fails when the inner rule fails.", "[parser][custom]") {
   using parser = percy::parser<right_curly>;
 
-  auto result = parser::parse(percy::static_input("x"));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("x"));
 
   REQUIRE(result.is_failure());
   REQUIRE(result.begin() == 0);

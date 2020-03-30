@@ -1,21 +1,19 @@
 #ifndef PERCY_EXAMPLE_AST
 #define PERCY_EXAMPLE_AST
 
-#include <variant>
-
-#include <cstdint>
+#include <percy/variant.hpp>
 
 namespace example::ast {
 struct expr;
 
 struct literal {
-  constexpr explicit literal(std::uint8_t val) : val(val) {}
-  std::uint8_t val;
+  constexpr explicit literal(char value) : value_(value) {}
+  char value_;
 };
 
 struct variable {
-  constexpr explicit variable(char name) : name(name) {}
-  char name;
+  constexpr explicit variable(char name) : name_(name) {}
+  char name_;
 };
 
 struct call {
@@ -23,25 +21,14 @@ struct call {
   char name_;
   const expr* arg1_;
   const expr* arg2_;
-  constexpr ~call();
 };
 
 struct expr {
-  constexpr explicit expr(literal value) : value(value) {}
-  constexpr explicit expr(variable value) : value(value) {}
-  constexpr explicit expr(call value) : value(value) {}
-  std::variant<literal, variable, call> value;
+  constexpr explicit expr(literal l) : value_(l) {}
+  constexpr explicit expr(variable v) : value_(v) {}
+  constexpr explicit expr(call c) : value_(c) {}
+  percy::variant<literal, variable, call> value_;
 };
-
-constexpr call::~call() {
-  if (arg1_) {
-    delete arg1_;
-  }
-
-  if (arg2_) {
-    delete arg2_;
-  }
-}
 } // namespace example::ast
 
 #endif

@@ -96,7 +96,7 @@ struct contains<U, T, Ts...> {
 
 /// Determines whether the list `Ts...` contains the type `U`.
 template <typename U, typename... Ts>
-constexpr inline bool contains_v = contains<U, Ts...>::value;
+constexpr inline bool has_same_v = contains<U, Ts...>::value;
 
 template <std::size_t N, typename... Ts>
 struct nth;

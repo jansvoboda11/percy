@@ -1,7 +1,7 @@
 #ifndef PERCY_RESULT
 #define PERCY_RESULT
 
-#include <variant>
+#include <percy/variant.hpp>
 
 namespace percy {
 class input_span {
@@ -35,7 +35,7 @@ class error {};
 
 template <typename T>
 class result {
-  std::variant<T, error> value_;
+  percy::variant<T, error> value_;
   input_span span_;
 
   template <typename U>
@@ -51,11 +51,11 @@ public:
   constexpr result(const failure& fail) : value_(error()), span_(fail.span()) {}
 
   constexpr bool is_success() const {
-    return std::holds_alternative<T>(value_);
+    return percy::holds_alternative<T>(value_);
   }
 
   constexpr bool is_failure() const {
-    return std::holds_alternative<error>(value_);
+    return percy::holds_alternative<error>(value_);
   }
 
   constexpr operator bool() const {
@@ -75,7 +75,7 @@ public:
   }
 
   constexpr auto get() const {
-    return std::get<T>(value_);
+    return percy::get<T>(value_);
   }
 };
 

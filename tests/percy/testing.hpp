@@ -1,0 +1,11 @@
+#ifndef PERCY_TESTING
+#define PERCY_TESTING
+
+#ifdef RUNTIME_TESTS
+#define CATCH_CONFIG_RUNTIME_STATIC_REQUIRE
+#define PERCY_CONSTEXPR
+#else
+#define PERCY_CONSTEXPR constexpr
+#endif
+
+#endif

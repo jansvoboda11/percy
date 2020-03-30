@@ -37,8 +37,8 @@ struct call {
 struct expr {
   using rule = percy::one_of<call, literal, variable>;
 
-  constexpr static auto action(percy::result<std::variant<ast::call, ast::literal, ast::variable>> parsed) {
-    return std::visit([](auto item) { return new ast::expr(item); }, parsed.get());
+  constexpr static auto action(percy::result<percy::variant<ast::call, ast::literal, ast::variable>> parsed) {
+    return percy::visit([](auto item) { return new ast::expr(item); }, parsed.get());
   }
 };
 

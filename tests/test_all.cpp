@@ -21,7 +21,7 @@ struct curly {
 };
 
 struct paren {
-  std::variant<round, curly> concrete;
+  percy::variant<round, curly> concrete;
   explicit paren(round r) : concrete(r) {}
   explicit paren(curly c) : concrete(c) {}
   bool operator==(const paren& other) const { return concrete == other.concrete; }
@@ -50,8 +50,8 @@ struct curly {
 
 struct paren {
   using rule = percy::one_of<round, curly>;
-  static auto action(percy::result<std::variant<ast::round, ast::curly>> parsed) {
-    return std::visit([](auto paren) { return ast::paren(paren); }, parsed.get());
+  static auto action(percy::result<percy::variant<ast::round, ast::curly>> parsed) {
+    return percy::visit([](auto paren) { return ast::paren(paren); }, parsed.get());
   }
 };
 } // namespace grammar
