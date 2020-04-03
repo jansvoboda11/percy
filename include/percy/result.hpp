@@ -42,7 +42,7 @@ public:
 
   constexpr explicit result(error error, input_span span) : value_(error), span_(span) {}
 
-  constexpr result(const failure& fail) : value_(error()), span_(fail.span()) {}
+  constexpr result(const failure &fail) : value_(error()), span_(fail.span()) {}
 
   constexpr bool is_success() const { return percy::holds_alternative<T>(value_); }
 

@@ -16,8 +16,8 @@ struct variable {
 
 struct call {
   char name;
-  const expr* arg1;
-  const expr* arg2;
+  const expr *arg1;
+  const expr *arg2;
 };
 
 struct expr {

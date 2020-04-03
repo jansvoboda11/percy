@@ -10,20 +10,20 @@ struct paren;
 struct round {
   std::vector<paren> parens;
   explicit round(std::vector<paren> parens) : parens(std::move(parens)) {}
-  bool operator==(const round& other) const { return parens == other.parens; }
+  bool operator==(const round &other) const { return parens == other.parens; }
 };
 
 struct curly {
   std::vector<paren> parens;
   explicit curly(std::vector<paren> parens) : parens(std::move(parens)) {}
-  bool operator==(const curly& other) const { return parens == other.parens; }
+  bool operator==(const curly &other) const { return parens == other.parens; }
 };
 
 struct paren {
   percy::variant<round, curly> concrete;
   explicit paren(round r) : concrete(r) {}
   explicit paren(curly c) : concrete(c) {}
-  bool operator==(const paren& other) const { return concrete == other.concrete; }
+  bool operator==(const paren &other) const { return concrete == other.concrete; }
 };
 } // namespace ast
 

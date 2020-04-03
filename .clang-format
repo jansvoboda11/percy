@@ -3,5 +3,4 @@ Language: Cpp
 BasedOnStyle: LLVM
 AlwaysBreakTemplateDeclarations: Yes
 ColumnLimit: 100
-PointerAlignment: Left
 ...

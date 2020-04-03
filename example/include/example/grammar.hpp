@@ -31,14 +31,14 @@ struct variable {
 struct call {
   using rule = sequence<range<'a', 'z'>, symbol<'('>, expr, symbol<','>, expr, symbol<')'>>;
 
-  constexpr static auto action(char fun, char l, ast::expr* e1, char comma, ast::expr* e2, char r) {
+  constexpr static auto action(char fun, char l, ast::expr *e1, char comma, ast::expr *e2, char r) {
     return ast::call(fun, e1, e2);
   }
 };
 
 struct expr {
   using rule = one_of<call, literal, variable>;
-  using result = ast::expr*;
+  using result = ast::expr *;
 
   constexpr static auto action(ast::call call) { return new ast::expr(call); }
   constexpr static auto action(ast::literal literal) { return new ast::expr(literal); }
@@ -48,7 +48,7 @@ struct expr {
 struct top {
   using rule = sequence<expr, end>;
 
-  constexpr static auto action(ast::expr* expr, eof eof) { return expr; }
+  constexpr static auto action(ast::expr *expr, eof eof) { return expr; }
 };
 } // namespace example::grammar
 
