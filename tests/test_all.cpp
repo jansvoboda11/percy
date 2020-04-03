@@ -55,36 +55,34 @@ struct paren {
 
 TEST_CASE("It parses nested parentheses correctly.", "[example]") {
   using parser = percy::parser<grammar::paren>;
-  auto input = percy::static_input("{(()){}}");
+  auto input = percy::input("{(()){}}");
   auto result = parser::parse(input);
 
   REQUIRE(result.is_success());
-  REQUIRE(result.begin() == 0);
-  REQUIRE(result.end() == 8);
+  REQUIRE(result->begin() == 0);
+  REQUIRE(result->end() == 8);
   // clang-format off
-  REQUIRE(result.get() == ast::paren(ast::curly({
-                              ast::paren(ast::round({
-                                  ast::paren(ast::round({}))})),
-                              ast::paren(ast::curly({}))})));
+  REQUIRE(result->get() == ast::paren(ast::curly({
+                               ast::paren(ast::round({
+                                   ast::paren(ast::round({}))})),
+                               ast::paren(ast::curly({}))})));
   // clang-format on
 }
 
 TEST_CASE("It fails to parse unbalanced parentheses.", "[example]") {
   using parser = percy::parser<grammar::paren>;
-  auto input = percy::static_input("({}");
+  auto input = percy::input("({}");
   auto result = parser::parse(input);
 
   REQUIRE(result.is_failure());
-  REQUIRE(result.begin() == 0);
-  REQUIRE(result.end() == 3);
+  REQUIRE(result.failure().loc() == 0);
 }
 
 TEST_CASE("It fails to parse mismatched parentheses.", "[example]") {
   using parser = percy::parser<grammar::paren>;
-  auto input = percy::static_input("({))");
+  auto input = percy::input("({))");
   auto result = parser::parse(input);
 
   REQUIRE(result.is_failure());
-  REQUIRE(result.begin() == 0);
-  REQUIRE(result.end() == 2);
+  REQUIRE(result.failure().loc() == 0);
 }

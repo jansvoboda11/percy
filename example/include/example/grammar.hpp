@@ -19,13 +19,13 @@ struct expr;
 struct literal {
   using rule = range<'0', '9'>;
 
-  constexpr static auto action(result<char> parsed) { return ast::literal(parsed.get() - '0'); }
+  constexpr static auto action(result<char> parsed) { return ast::literal(parsed->get() - '0'); }
 };
 
 struct variable {
   using rule = range<'a', 'z'>;
 
-  constexpr static auto action(result<char> parsed) { return ast::variable(parsed.get()); }
+  constexpr static auto action(result<char> parsed) { return ast::variable(parsed->get()); }
 };
 
 struct call {
@@ -48,7 +48,7 @@ struct expr {
 struct top {
   using rule = sequence<expr, end>;
 
-  constexpr static auto action(ast::expr *expr, eof eof) { return expr; }
+  constexpr static auto action(ast::expr *expr, eof _) { return expr; }
 };
 } // namespace example::grammar
 

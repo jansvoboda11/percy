@@ -46,7 +46,7 @@ constexpr inline bool is_sequence_v = is_sequence<Subject>::value;
 
 /// The value type of a result type.
 template <typename Result>
-using result_value_t = typename Result::value_type;
+using result_value_t = typename Result::success_type::value_type;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

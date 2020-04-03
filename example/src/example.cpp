@@ -6,7 +6,7 @@ int main() {
   using parser = percy::parser<example::grammar::top>;
 
   auto exit_code = []() {
-    auto input = percy::static_input(INPUT_CODE);
+    auto input = percy::input(INPUT_CODE);
     auto result = parser::parse(input);
     return result.is_success() ? 0 : 1;
   }();

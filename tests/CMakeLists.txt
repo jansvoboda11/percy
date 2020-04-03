@@ -2,9 +2,9 @@ include(${PROJECT_SOURCE_DIR}/cmake/Catch2.cmake)
 
 add_executable(test_all
   test_all.cpp
+  percy/input.cpp
   percy/parser.cpp
   percy/result.cpp
-  percy/static_input.cpp
   percy/type_traits.cpp
 )
 
