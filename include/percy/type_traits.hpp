@@ -4,17 +4,59 @@
 #include <type_traits>
 
 namespace percy {
-/// Forward declaration.
-template <typename Rule>
-struct parser;
+// Forward declaration.
+template <typename Rule, typename... AlternativeRules>
+struct one_of;
+
+template <typename T>
+struct is_one_of {
+  constexpr static bool value = false;
+};
+
+template <typename... Alternatives>
+struct is_one_of<one_of<Alternatives...>> {
+  constexpr static bool value = true;
+};
+
+template <typename T>
+constexpr inline bool is_one_of_v = is_one_of<T>::value;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Forward declaration.
+template <typename Rule, typename... FollowingRules>
+struct sequence;
+
+template <typename T>
+struct is_sequence {
+  constexpr static bool value = false;
+};
+
+template <typename... Rules>
+struct is_sequence<sequence<Rules...>> {
+  constexpr static bool value = true;
+};
+
+template <typename T>
+constexpr inline bool is_sequence_v = is_sequence<T>::value;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// The value type of a result type.
 template <typename Result>
 using result_value_t = typename Result::value_type;
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/// Forward declaration.
+template <typename Rule, typename Enabled>
+struct parser;
+
 /// The result type of a rule.
 template <typename Rule>
-using parser_result_t = typename parser<Rule>::result_type;
+using parser_result_t = typename parser<Rule, typename std::enable_if_t<true>>::result_type;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// The return type of a function.
 template <typename F>
@@ -25,6 +67,8 @@ struct function_return<R(As...)> {
   using type = R;
 };
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 template <typename Rule>
 struct action_return {
   using type = typename function_return<decltype(Rule::action)>::type;
@@ -33,6 +77,8 @@ struct action_return {
 /// The return type of a rule with custom action.
 template <typename Rule>
 using action_return_t = typename action_return<Rule>::type;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename... Ts>
 struct are_same_impl;
@@ -51,6 +97,8 @@ struct are_same_impl<T, Ts...> {
 template <typename... Ts>
 inline constexpr bool are_same_v = are_same_impl<Ts...>::value;
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 template <typename... Ts>
 struct are_unique;
 
@@ -68,6 +116,8 @@ struct are_unique<T1, T2, Ts...> {
 template <typename... Ts>
 inline constexpr bool are_unique_v = are_unique<Ts...>::value;
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 template <typename U, typename... Ts>
 struct index_of;
 
@@ -81,22 +131,26 @@ struct index_of<U, T, Ts...> : std::integral_constant<std::size_t, 1 + index_of<
 template <typename U, typename... Ts>
 constexpr inline std::size_t index_of_v = index_of<U, Ts...>::value;
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 template <typename U, typename... Ts>
-struct contains;
+struct has_same;
 
 template <typename U>
-struct contains<U> {
+struct has_same<U> {
   constexpr static bool value = false;
 };
 
 template <typename U, typename T, typename... Ts>
-struct contains<U, T, Ts...> {
-  constexpr static bool value = std::is_same_v<U, T> || contains<U, Ts...>::value;
+struct has_same<U, T, Ts...> {
+  constexpr static bool value = std::is_same_v<U, T> || has_same<U, Ts...>::value;
 };
 
 /// Determines whether the list `Ts...` contains the type `U`.
 template <typename U, typename... Ts>
-constexpr inline bool has_same_v = contains<U, Ts...>::value;
+constexpr inline bool has_same_v = has_same<U, Ts...>::value;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <std::size_t N, typename... Ts>
 struct nth;

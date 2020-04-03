@@ -11,7 +11,7 @@
 #include <vector>
 
 namespace percy {
-template <typename Rule>
+template <typename Rule, typename Enabled = void>
 struct parser {
   using result_type = result<action_return_t<Rule>>;
 
@@ -27,9 +27,44 @@ struct parser {
   }
 };
 
+template <typename Rule>
+struct parser<Rule, typename std::enable_if_t<is_one_of_v<typename Rule::rule>>> {
+  using result_type = result<typename Rule::result>;
+
+  template <typename Input>
+  constexpr static result_type parse(Input input) {
+    auto raw_result = parser<typename Rule::rule>::parse(input);
+
+    if (raw_result.is_failure()) {
+      return failure(raw_result.span());
+    }
+
+    auto visitor = [](auto alternative) { return Rule::action(alternative); };
+    return success(percy::visit(visitor, raw_result.get()), raw_result.span());
+  }
+};
+
+template <typename Rule>
+struct parser<Rule, std::enable_if_t<is_sequence_v<typename Rule::rule>>> {
+  using result_type = result<action_return_t<Rule>>;
+
+  template <typename Input>
+  constexpr static result_type parse(Input input) {
+    auto raw_result = parser<typename Rule::rule>::parse(input);
+
+    if (raw_result.is_failure()) {
+      return failure(raw_result.span());
+    }
+
+    return success(std::apply(Rule::action, raw_result.get()), raw_result.span());
+  }
+};
+
+struct eof {};
+
 template <>
 struct parser<end> {
-  using result_type = result<std::true_type>;
+  using result_type = result<eof>;
 
   template <typename Input>
   constexpr static result_type parse(Input input) {
@@ -37,7 +72,7 @@ struct parser<end> {
       return failure({input.position(), input.position()});
     }
 
-    return success(std::true_type(), {input.position(), input.position()});
+    return success(eof{}, {input.position(), input.position()});
   }
 };
 

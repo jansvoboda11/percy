@@ -34,24 +34,28 @@ struct paren;
 
 struct round {
   using rule = percy::sequence<percy::symbol<'('>, percy::many<paren>, percy::symbol<')'>>;
-  static auto action(percy::result<std::tuple<char, std::vector<ast::paren>, char>> parsed) {
-    auto parens = std::get<1>(parsed.get());
+  static auto action(char l_round, std::vector<ast::paren> parens, char r_round) {
     return ast::round(parens);
   }
 };
 
 struct curly {
   using rule = percy::sequence<percy::symbol<'{'>, percy::many<paren>, percy::symbol<'}'>>;
-  static auto action(percy::result<std::tuple<char, std::vector<ast::paren>, char>> parsed) {
-    auto parens = std::get<1>(parsed.get());
+  static auto action(char l_curly, std::vector<ast::paren> parens, char r_curly) {
     return ast::curly(parens);
   }
 };
 
 struct paren {
   using rule = percy::one_of<round, curly>;
-  static auto action(percy::result<percy::variant<ast::round, ast::curly>> parsed) {
-    return percy::visit([](auto paren) { return ast::paren(paren); }, parsed.get());
+  using result = ast::paren;
+
+  static result action(ast::round round) {
+    return ast::paren(round);
+  }
+
+  static result action(ast::curly curly) {
+    return ast::paren(curly);
   }
 };
 } // namespace grammar

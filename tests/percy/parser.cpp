@@ -279,8 +279,8 @@ TEST_CASE("Parser `many` stops at the input end.", "[parser][many]") {
 
 struct left_curly {
   using rule = percy::sequence<percy::symbol<'{'>>;
-  static constexpr auto action(percy::result<std::tuple<char>> parsed) {
-    return std::get<0>(parsed.get());
+  constexpr static auto action(char l_curly) {
+    return l_curly;
   }
 };
 
@@ -297,18 +297,46 @@ TEST_CASE("Parser of custom rule succeeds when the inner rule matches.", "[parse
 
 struct right_curly {
   using rule = percy::sequence<percy::symbol<'}'>>;
-  static auto action(percy::result<std::tuple<char>> parsed) {
+  static auto action(char r_curly) {
     FAIL("Called action of a custom rule after failure.");
-    return std::false_type();
+    return false;
   }
 };
 
 TEST_CASE("Parser of custom rule fails when the inner rule fails.", "[parser][custom]") {
   using parser = percy::parser<right_curly>;
 
-  PERCY_CONSTEXPR auto result = parser::parse(percy::static_input("x"));
+  auto result = parser::parse(percy::static_input("x"));
 
   REQUIRE(result.is_failure());
   REQUIRE(result.begin() == 0);
   REQUIRE(result.end() == 1);
+}
+
+struct stmt {
+  using rule = percy::one_of<percy::symbol<'a'>, percy::many<percy::symbol<'x'>>>;
+  using result = int;
+  static auto action(char a) {
+    return 0;
+  }
+  static auto action(std::vector<char> xs) {
+    return 1000;
+  }
+};
+
+TEST_CASE("Blah.", "[parser][custom]") {
+  using parser = percy::parser<stmt>;
+
+  auto result_a = parser::parse(percy::static_input("a"));
+  auto result_xs = parser::parse(percy::static_input("xx"));
+
+  REQUIRE(result_a.is_success());
+  REQUIRE(result_a.begin() == 0);
+  REQUIRE(result_a.end() == 1);
+  REQUIRE(result_a.get() == 0);
+
+  REQUIRE(result_xs.is_success());
+  REQUIRE(result_xs.begin() == 0);
+  REQUIRE(result_xs.end() == 2);
+  REQUIRE(result_xs.get() == 1000);
 }
