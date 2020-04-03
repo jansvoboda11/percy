@@ -4,7 +4,6 @@
 
 #include <percy.hpp>
 
-// clang-format off
 namespace ast {
 struct paren;
 
@@ -27,7 +26,6 @@ struct paren {
   bool operator==(const paren& other) const { return concrete == other.concrete; }
 };
 } // namespace ast
-// clang-format on
 
 namespace grammar {
 struct paren;
@@ -50,13 +48,8 @@ struct paren {
   using rule = percy::one_of<round, curly>;
   using result = ast::paren;
 
-  static result action(ast::round round) {
-    return ast::paren(round);
-  }
-
-  static result action(ast::curly curly) {
-    return ast::paren(curly);
-  }
+  static result action(ast::round round) { return ast::paren(round); }
+  static result action(ast::curly curly) { return ast::paren(curly); }
 };
 } // namespace grammar
 

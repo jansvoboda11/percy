@@ -15,17 +15,11 @@ public:
   constexpr explicit static_input(std::string_view content, std::size_t position = 0)
       : content_(content), cursor_(position) {}
 
-  constexpr char peek() const {
-    return content_[cursor_];
-  }
+  constexpr char peek() const { return content_[cursor_]; }
 
-  constexpr std::size_t position() const {
-    return cursor_;
-  }
+  constexpr std::size_t position() const { return cursor_; }
 
-  constexpr bool ended() const {
-    return cursor_ >= content_.length();
-  }
+  constexpr bool ended() const { return cursor_ >= content_.length(); }
 
   constexpr static_input advanced_by(std::size_t offset) const {
     return static_input(content_, cursor_ + offset);

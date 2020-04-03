@@ -11,7 +11,8 @@ struct symbol {};
 
 template <char Begin, char End>
 struct range {
-  static_assert(Begin <= End, "The `range` rule requires the `Begin` char not be greater than the `End` char.");
+  static_assert(Begin <= End,
+                "The `range` rule requires the `Begin` char not be greater than the `End` char.");
 };
 
 template <typename StringProvider>

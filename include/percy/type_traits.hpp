@@ -8,45 +8,47 @@ namespace percy {
 template <typename Rule, typename... AlternativeRules>
 struct one_of;
 
-template <typename T>
+template <typename Subject>
 struct is_one_of {
   constexpr static bool value = false;
 };
 
-template <typename... Alternatives>
-struct is_one_of<one_of<Alternatives...>> {
+template <typename Rule, typename... AlternativeRules>
+struct is_one_of<one_of<Rule, AlternativeRules...>> {
   constexpr static bool value = true;
 };
 
-template <typename T>
-constexpr inline bool is_one_of_v = is_one_of<T>::value;
+/// Determines whether Subject is one_of.
+template <typename Subject>
+constexpr inline bool is_one_of_v = is_one_of<Subject>::value;
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Forward declaration.
 template <typename Rule, typename... FollowingRules>
 struct sequence;
 
-template <typename T>
+template <typename Subject>
 struct is_sequence {
   constexpr static bool value = false;
 };
 
-template <typename... Rules>
-struct is_sequence<sequence<Rules...>> {
+template <typename Rule, typename... FollowingRules>
+struct is_sequence<sequence<Rule, FollowingRules...>> {
   constexpr static bool value = true;
 };
 
-template <typename T>
-constexpr inline bool is_sequence_v = is_sequence<T>::value;
+/// Determines whether Subject is sequence.
+template <typename Subject>
+constexpr inline bool is_sequence_v = is_sequence<Subject>::value;
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// The value type of a result type.
 template <typename Result>
 using result_value_t = typename Result::value_type;
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// Forward declaration.
 template <typename Rule, typename Enabled>
@@ -56,7 +58,7 @@ struct parser;
 template <typename Rule>
 using parser_result_t = typename parser<Rule, typename std::enable_if_t<true>>::result_type;
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// The return type of a function.
 template <typename F>
@@ -67,7 +69,7 @@ struct function_return<R(As...)> {
   using type = R;
 };
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename Rule>
 struct action_return {
@@ -78,7 +80,7 @@ struct action_return {
 template <typename Rule>
 using action_return_t = typename action_return<Rule>::type;
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename... Ts>
 struct are_same_impl;
@@ -93,11 +95,11 @@ struct are_same_impl<T, Ts...> {
   constexpr static bool value = std::conjunction_v<std::is_same<T, Ts>...>;
 };
 
-/// Determines whether all types in `Ts...` are the same.
+/// Determines whether all types in Ts are the same.
 template <typename... Ts>
 inline constexpr bool are_same_v = are_same_impl<Ts...>::value;
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename... Ts>
 struct are_unique;
@@ -109,29 +111,31 @@ struct are_unique<T> {
 
 template <typename T1, typename T2, typename... Ts>
 struct are_unique<T1, T2, Ts...> {
-  constexpr static bool value = !std::is_same_v<T1, T2> && are_unique<T1, Ts...>::value && are_unique<T2, Ts...>::value;
+  constexpr static bool value =
+      !std::is_same_v<T1, T2> && are_unique<T1, Ts...>::value && are_unique<T2, Ts...>::value;
 };
 
-/// Determines whether all types in `Ts...` are unique.
+/// Determines whether all types in Ts are unique.
 template <typename... Ts>
 inline constexpr bool are_unique_v = are_unique<Ts...>::value;
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename U, typename... Ts>
-struct index_of;
+struct type_index;
 
 template <typename U, typename... Ts>
-struct index_of<U, U, Ts...> : std::integral_constant<std::size_t, 0> {};
+struct type_index<U, U, Ts...> : std::integral_constant<std::size_t, 0> {};
 
 template <typename U, typename T, typename... Ts>
-struct index_of<U, T, Ts...> : std::integral_constant<std::size_t, 1 + index_of<U, Ts...>::value> {};
+struct type_index<U, T, Ts...>
+    : std::integral_constant<std::size_t, 1 + type_index<U, Ts...>::value> {};
 
-/// The index of the type `U` in the list `Ts...`.
+/// The index of type U in the list Ts.
 template <typename U, typename... Ts>
-constexpr inline std::size_t index_of_v = index_of<U, Ts...>::value;
+constexpr inline std::size_t type_index_v = type_index<U, Ts...>::value;
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename U, typename... Ts>
 struct has_same;
@@ -146,28 +150,28 @@ struct has_same<U, T, Ts...> {
   constexpr static bool value = std::is_same_v<U, T> || has_same<U, Ts...>::value;
 };
 
-/// Determines whether the list `Ts...` contains the type `U`.
+/// Determines whether the list Ts contains the type U.
 template <typename U, typename... Ts>
 constexpr inline bool has_same_v = has_same<U, Ts...>::value;
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template <std::size_t N, typename... Ts>
-struct nth;
+template <std::size_t Index, typename... Ts>
+struct at_index;
 
 template <typename T, typename... Ts>
-struct nth<0, T, Ts...> {
+struct at_index<0, T, Ts...> {
   using type = T;
 };
 
-template <std::size_t N, typename T, typename... Ts>
-struct nth<N, T, Ts...> {
-  using type = typename nth<N - 1, Ts...>::type;
+template <std::size_t Index, typename T, typename... Ts>
+struct at_index<Index, T, Ts...> {
+  using type = typename at_index<Index - 1, Ts...>::type;
 };
 
-/// The N-th type in list `Ts...`.
-template <std::size_t N, typename... Ts>
-using nth_t = typename nth<N, Ts...>::type;
+/// The type at given index in the type list Ts.
+template <std::size_t Index, typename... Ts>
+using at_index_t = typename at_index<Index, Ts...>::type;
 } // namespace percy
 
 #endif

@@ -162,11 +162,9 @@ struct parser<sequence<Rule>> {
 
 template <typename Rule, typename FollowingRule, typename... FollowingRules>
 struct parser<sequence<Rule, FollowingRule, FollowingRules...>> {
-  // clang-format off
   using result_type = result<std::tuple<result_value_t<parser_result_t<Rule>>,
                                         result_value_t<parser_result_t<FollowingRule>>,
                                         result_value_t<parser_result_t<FollowingRules>>...>>;
-  // clang-format on
 
   template <typename Input>
   constexpr static result_type parse(Input input) {
@@ -176,7 +174,8 @@ struct parser<sequence<Rule, FollowingRule, FollowingRules...>> {
       return failure(result.span());
     }
 
-    auto following_result = parser<sequence<FollowingRule, FollowingRules...>>::parse(input.advanced_to(result.end()));
+    auto following_result =
+        parser<sequence<FollowingRule, FollowingRules...>>::parse(input.advanced_to(result.end()));
 
     if (following_result.is_failure()) {
       return failure({result.begin(), following_result.end()});
@@ -232,11 +231,9 @@ struct parser<one_of<Rule>> {
 
 template <typename Rule, typename AlternativeRule, typename... AlternativeRules>
 struct parser<one_of<Rule, AlternativeRule, AlternativeRules...>> {
-  // clang-format off
   using result_type = result<percy::variant<result_value_t<parser_result_t<Rule>>,
                                             result_value_t<parser_result_t<AlternativeRule>>,
                                             result_value_t<parser_result_t<AlternativeRules>>...>>;
-  // clang-format on
 
   template <typename Input>
   constexpr static result_type parse(Input input) {
