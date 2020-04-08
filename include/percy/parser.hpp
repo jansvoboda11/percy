@@ -1,8 +1,8 @@
 #ifndef PERCY_PARSER
 #define PERCY_PARSER
 
-#include "result.hpp"
-#include "rules.hpp"
+#include "percy/result.hpp"
+#include "percy/rules.hpp"
 
 #include <percy/variant.hpp>
 

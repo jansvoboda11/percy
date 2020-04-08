@@ -9,7 +9,7 @@
 TEST_CASE("Parser end succeeds on input end.", "[parser][end]") {
   using parser = percy::parser<percy::end>;
 
-  PERCY_CONSTEXPR auto result = parser::parse(percy::input("abc").advanced_to(percy::input_location(3)));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::input("abc", 3));
 
   STATIC_REQUIRE(result.is_success());
   STATIC_REQUIRE(result->begin() == 3);
@@ -19,7 +19,7 @@ TEST_CASE("Parser end succeeds on input end.", "[parser][end]") {
 TEST_CASE("Parser end fails in the middle of input.", "[parser][end]") {
   using parser = percy::parser<percy::end>;
 
-  PERCY_CONSTEXPR auto result = parser::parse(percy::input("abc").advanced_to(percy::input_location(1)));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::input("abc", 1));
 
   STATIC_REQUIRE(result.is_failure());
   STATIC_REQUIRE(result.failure().loc() == 1);
@@ -48,7 +48,7 @@ TEST_CASE("Parser symbol fails on different character.", "[parser][symbol]") {
 TEST_CASE("Parser symbol fails on input end.", "[parser][symbol]") {
   using parser = percy::parser<percy::symbol<'a'>>;
 
-  PERCY_CONSTEXPR auto result = parser::parse(percy::input("abc").advanced_to(percy::input_location(3)));
+  PERCY_CONSTEXPR auto result = parser::parse(percy::input("abc", 3));
 
   STATIC_REQUIRE(result.is_failure());
   STATIC_REQUIRE(result.failure().loc() == 3);

@@ -1,7 +1,7 @@
 #ifndef PERCY_RULES
 #define PERCY_RULES
 
-#include "type_traits.hpp"
+#include "percy/type_traits.hpp"
 
 namespace percy {
 struct end {};
