@@ -167,6 +167,26 @@ TEST_CASE("Parser sequence fails when following rule does not match.", "[parser]
   STATIC_REQUIRE(result.failure().loc() == 1);
 }
 
+static testing::context ctx();
+
+namespace percy {
+struct parser<testing::tracker1> {
+  using result_type = result<eof>;
+
+  constexpr static result_type parse(Input input) {
+    return succeed(testing::tracker1(&ctx), {input.loc(), input.loc() + 1});
+  }
+};
+}
+
+TEST_CASE("Parser sequence correctly handles lifetimes.", "[parser][sequence]") {
+  using parser = percy::parser<percy::sequence<testing::tracker1>>;
+
+  PERCY_CONSTEXPR auto result - parser::parse(percy::input("xxx"));
+
+  //
+}
+
 TEST_CASE("Parser either succeeds when first rule matches.", "[parser][either]") {
   using parser = percy::parser<percy::either<percy::symbol<'a'>, percy::symbol<'b'>>>;
 
@@ -236,7 +256,7 @@ TEST_CASE("Parser one_of fails when no rule matches.", "[parser][one_of]") {
 TEST_CASE("Parser many succeeds even when rule matches zero times.", "[parser][many]") {
   using parser = percy::parser<percy::many<percy::symbol<'x'>>>;
 
-  PERCY_CONSTEXPR auto result = parser::parse(percy::input("abc"));
+  auto result = parser::parse(percy::input("abc"));
 
   REQUIRE(result.is_success());
   REQUIRE(result->begin() == 0);
@@ -247,7 +267,7 @@ TEST_CASE("Parser many succeeds even when rule matches zero times.", "[parser][m
 TEST_CASE("Parser many succeeds when rule matches multiple times.", "[parser][many]") {
   using parser = percy::parser<percy::many<percy::symbol<'a'>>>;
 
-  PERCY_CONSTEXPR auto result = parser::parse(percy::input("aac"));
+  auto result = parser::parse(percy::input("aac"));
 
   REQUIRE(result.is_success());
   REQUIRE(result->begin() == 0);
@@ -258,7 +278,7 @@ TEST_CASE("Parser many succeeds when rule matches multiple times.", "[parser][ma
 TEST_CASE("Parser many stops at the input end.", "[parser][many]") {
   using parser = percy::parser<percy::many<percy::symbol<'a'>>>;
 
-  PERCY_CONSTEXPR auto result = parser::parse(percy::input("aaa"));
+  auto result = parser::parse(percy::input("aaa"));
 
   REQUIRE(result.is_success());
   REQUIRE(result->begin() == 0);

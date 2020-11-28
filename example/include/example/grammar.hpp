@@ -48,7 +48,7 @@ struct expr {
 struct top {
   using rule = sequence<expr, end>;
 
-  constexpr static auto action(ast::expr *expr, eof _) { return expr; }
+  constexpr static auto action(ast::expr *expr, eof _) { return ast::ast(expr); }
 };
 } // namespace example::grammar
 

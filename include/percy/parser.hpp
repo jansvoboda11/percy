@@ -56,7 +56,10 @@ struct parser<Rule, std::enable_if_t<is_sequence_v<typename Rule::rule>>> {
       return raw_result.failure();
     }
 
-    return succeed(std::apply(Rule::action, raw_result->get()), raw_result->span());
+    auto result0 = raw_result->get();
+    auto result1 = std::apply(Rule::action, result0);
+    auto success = succeed(std::move(result1), raw_result->span());
+    return std::move(success);
   }
 };
 
@@ -105,7 +108,7 @@ struct parser<range<Begin, End>> {
     }
 
     if (auto symbol = input.peek(); Begin <= symbol && symbol <= End) {
-      return succeed(symbol, {input.loc(), 1});
+      return succeed(std::move(symbol), {input.loc(), 1});
     }
 
     return fail("Range.", input.loc());
@@ -182,7 +185,7 @@ struct parser<sequence<Rule, FollowingRule, FollowingRules...>> {
     }
 
     auto value = std::tuple_cat(result->get(), following_result->get());
-    return succeed(value, {result->begin(), following_result->end()});
+    return succeed(std::move(value), {result->begin(), following_result->end()});
   }
 };
 
